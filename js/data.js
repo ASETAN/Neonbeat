@@ -57,13 +57,24 @@ async function fetchArtistReleases(artist) {
     try {
         let url;
 
+        // Check if running on Vercel or Local
+        const isVercel = window.location.hostname.includes('vercel.app');
+
         // Use Lookup API if we have a specific ID (more accurate)
         if (artist.itunesId) {
-            url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=100&sort=recent&country=JP`;
+            if (isVercel) {
+                url = `/api/lookup?id=${artist.itunesId}&entity=album&limit=100&sort=recent&country=JP`;
+            } else {
+                url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=100&sort=recent&country=JP`;
+            }
         } else {
             // Fallback to Search API
             const query = encodeURIComponent(artist.name);
-            url = `https://itunes.apple.com/search?term=${query}&country=JP&media=music&entity=album&limit=200&sort=recent`;
+            if (isVercel) {
+                url = `/api/search?term=${query}&country=JP&entity=album&limit=200&sort=recent`;
+            } else {
+                url = `https://itunes.apple.com/search?term=${query}&country=JP&media=music&entity=album&limit=200&sort=recent`;
+            }
         }
 
         const response = await fetch(url);
@@ -121,7 +132,16 @@ async function fetchArtistReleases(artist) {
 // Fetch Album Details (Tracks)
 async function fetchAlbumDetails(collectionId) {
     try {
-        const response = await fetch(`https://itunes.apple.com/lookup?id=${collectionId}&entity=song&country=JP`);
+        const isVercel = window.location.hostname.includes('vercel.app');
+        let url;
+
+        if (isVercel) {
+            url = `/api/lookup?id=${collectionId}&entity=song&country=JP&limit=200&sort=recent`;
+        } else {
+            url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&country=JP`;
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) throw new Error('Network response was not ok');
 
@@ -150,8 +170,15 @@ async function fetchAlbumDetails(collectionId) {
 // Fetch Artist Image from iTunes API
 async function fetchArtistImageFromiTunes(artistName) {
     try {
+        const isVercel = window.location.hostname.includes('vercel.app');
+        let url;
         const query = encodeURIComponent(artistName);
-        const url = `https://itunes.apple.com/search?term=${query}&country=JP&media=music&entity=musicArtist&limit=5`;
+
+        if (isVercel) {
+            url = `/api/search?term=${query}&country=JP&entity=musicArtist&limit=5&sort=mostRecent`;
+        } else {
+            url = `https://itunes.apple.com/search?term=${query}&country=JP&media=music&entity=musicArtist&limit=5`;
+        }
 
         const response = await fetch(url);
         if (!response.ok) throw new Error('Network response was not ok');
