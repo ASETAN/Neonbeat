@@ -36,27 +36,51 @@ const modal = {
     links: {
         youtube: document.getElementById('link-youtube'),
         apple: document.getElementById('link-apple'),
-        spotify: document.getElementById('link-spotify')
+        spotify: document.getElementById('link-spotify'),
+        amazon: document.getElementById('link-amazon')
     }
 };
 
 // Initialization
 async function init() {
-    console.log('🚀 App initialization started');
-    loadState();
-    setupNavigation();
-    setupSortControls();
-    setupModal();
+    try {
+        console.log('🚀 App initialization started');
+        loadState();
+        setupNavigation();
+        setupSortControls();
+        setupModal();
 
-    // Load artist images first
-    console.log('📸 Loading artist images...');
-    await loadArtistImages();
-    console.log('✅ Artist images loaded');
+        // Render initial views with placeholders
+        console.log('🎨 Initial render...');
+        renderAll();
 
-    // Then render all views
-    console.log('🎨 Rendering views...');
-    renderAll();
-    console.log('✅ App initialization complete');
+        // Load artist images in background
+        console.log('📸 Loading artist images in background...');
+        loadArtistImages((artist) => {
+            updateArtistImageInUI(artist);
+        }).catch(err => console.error('Background image load error:', err));
+
+        console.log('✅ App initialization complete');
+    } catch (error) {
+        console.error('CRITICAL: App failed to initialize:', error);
+        // Display on screen if possible
+        const errBanner = document.createElement('div');
+        errBanner.style.padding = '20px';
+        errBanner.style.color = '#ff6b6b';
+        errBanner.innerHTML = `<h2>Launch Failed</h2><p>${error.message}</p>`;
+        document.body.prepend(errBanner);
+    }
+}
+
+// Helper to update specific artist image in the DOM without full re-render
+function updateArtistImageInUI(artist) {
+    const item = document.querySelector(`.artist-item[data-artist-name="${artist.name}"]`);
+    if (item) {
+        const img = item.querySelector('.artist-avatar');
+        if (img && img.src !== artist.image) {
+            img.src = artist.image;
+        }
+    }
 }
 
 // State Management
@@ -283,12 +307,13 @@ function renderArtists() {
     allArtists.forEach(artist => {
         const item = document.createElement('div');
         item.className = 'artist-item';
+        item.dataset.artistName = artist.name; // Add this for efficient updating
 
         const isFollowing = state.followedArtists.has(artist.id);
 
         item.innerHTML = `
             <div class="artist-info">
-                <img src="${artist.image}" alt="${artist.name}" class="artist-avatar">
+                <img src="${artist.image}" alt="${artist.name}" class="artist-avatar" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random&color=fff&size=200';">
                 <div style="display:flex; flex-direction:column;">
                     <span class="artist-name">${artist.name}</span>
                     <span style="font-size:0.7rem; color: #a0a0b0;">Debut: ${artist.debutDate.split('-')[0]}</span>
@@ -349,19 +374,11 @@ function setupModal() {
 async function openModal(release) {
     modal.el.classList.add('active');
 
-    // Show loading state initially
-    modal.cover.src = release.image;
-    modal.title.textContent = release.title;
-    modal.artist.textContent = 'Loading...';
-    modal.meta.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-    // Reset body content to just header info temporarily or loading
+    // Modern Loading State
     const modalBody = document.getElementById('modal-release-body');
-    // We'll reconstruct the body completely for the new layout    
     modalBody.innerHTML = `
-        <div class="modal-loading">
-            <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
-            <p>Loading album details...</p>
+        <div style="display:flex; justify-content:center; align-items:center; height:300px;">
+            <p style="font-size: 1.2rem; color: var(--text-muted);">Loading...</p>
         </div>
     `;
 
@@ -395,8 +412,17 @@ async function openModal(release) {
                 </div>
                 
                 <div class="album-actions">
-                    <a href="${collection.collectionViewUrl}" target="_blank" class="btn-primary btn-play">
-                        <i class="fa-solid fa-play"></i> Play on Apple Music
+                    <a href="${collection.collectionViewUrl}" target="_blank" class="btn-streaming apple">
+                        <i class="fa-brands fa-apple"></i> Apple Music
+                    </a>
+                    <a href="${release.links.spotify}" target="_blank" class="btn-streaming spotify">
+                        <i class="fa-brands fa-spotify"></i> Spotify
+                    </a>
+                    <a href="${release.links.youtube}" target="_blank" class="btn-streaming youtube">
+                        <i class="fa-brands fa-youtube"></i> YouTube Music
+                    </a>
+                    <a href="${release.links.amazon}" target="_blank" class="btn-streaming amazon">
+                        <i class="fa-brands fa-amazon"></i> Amazon Music
                     </a>
                     <div class="action-row">
                         <button class="btn-icon"><i class="fa-regular fa-heart"></i></button>

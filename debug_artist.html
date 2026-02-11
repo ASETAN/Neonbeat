@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSONP Debugger</title>
+</head>
+
+<body>
+    <h1>JSONP Debugger</h1>
+    <div id="output"></div>
+    <script>
+        const output = document.getElementById('output');
+        function log(msg) {
+            output.innerHTML += `<p>${msg}</p>`;
+            console.log(msg);
+        }
+
+        function jsonp(url) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_' + Math.round(100000 * Math.random());
+                window[callbackName] = function (data) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    resolve(data);
+                };
+
+                const script = document.createElement('script');
+                script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+                script.onerror = () => {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    reject(new Error('JSONP request failed'));
+                };
+                document.body.appendChild(script);
+            });
+        }
+
+        async function testFetch() {
+            const artistName = "TWICE";
+            log(`Testing JSONP for: ${artistName}`);
+
+            const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&country=JP&media=music&entity=album&limit=5`;
+            log(`URL: ${url}`);
+
+            try {
+                const data = await jsonp(url);
+                log(`Data received! Result Count: ${data.resultCount}`);
+
+                if (data.results && data.results.length > 0) {
+                    const result = data.results[0];
+                    log(`First Result: ${result.artistName}`);
+                    log(`Artwork 100: ${result.artworkUrl100}`);
+
+                    if (result.artworkUrl100) {
+                        document.body.innerHTML += `<img src="${result.artworkUrl100}" style="width:200px">`;
+                    }
+                } else {
+                    log('No results found.');
+                }
+
+            } catch (err) {
+                log(`Error: ${err.message}`);
+            }
+        }
+
+        testFetch();
+    </script>
+</body>
+
+</html>

@@ -76,6 +76,7 @@ h3 {
     width: 100%;
     height: 100%;
     overflow-y: auto;
+    scrollbar-gutter: stable;
     padding-bottom: calc(var(--nav-height) + 20px);
     padding-top: var(--header-height);
     opacity: 0;
@@ -559,6 +560,11 @@ h3 {
 .btn-streaming.spotify {
     background: #1db954;
     color: black;
+}
+
+.btn-streaming.amazon {
+    background: #232f3e;
+    color: white;
 }
 
 /* Empty State */

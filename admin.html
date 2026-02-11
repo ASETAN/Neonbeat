@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeonBeat Admin - Artist Manager</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #0f0f13;
+            --bg-card: #18181c;
+            --primary: #9d4edd;
+            --text-main: #ffffff;
+            --text-muted: #a0a0b0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Layout */
+        .panel {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .left-panel {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .right-panel {
+            flex: 1;
+            overflow-y: auto;
+            border-left: 1px solid #333;
+        }
+
+        h2 {
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        /* Search Area */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #222;
+            color: white;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 12px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.secondary {
+            background: #444;
+        }
+
+        /* Results List */
+        .result-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .artist-card {
+            background: #222;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-align: center;
+        }
+
+        .artist-card:hover {
+            transform: translateY(-2px);
+            background: #333;
+        }
+
+        .artist-card img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .artist-card h3 {
+            font-size: 0.9rem;
+            margin: 5px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artist-card p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Managed List */
+        .managed-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .managed-item {
+            background: #25252b;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .managed-item img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .managed-info {
+            flex: 1;
+        }
+
+        .remove-btn {
+            background: #ff4757;
+            padding: 8px;
+            font-size: 0.8rem;
+        }
+
+        /* Export Area */
+        .export-area {
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 150px;
+            background: #222;
+            color: #0f0;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            box-sizing: border-box;
+        }
+
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Left: Search & Add -->
+    <div class="panel left-panel">
+        <h2>🔍 iTunes Search</h2>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Enter artist name (e.g. IVE)"
+                onkeypress="handleEnter(event)">
+            <button onclick="searchArtist()">Search</button>
+        </div>
+        <div id="results" class="result-list"></div>
+    </div>
+
+    <!-- Right: Managed List & Export -->
+    <div class="panel right-panel">
+        <h2>📋 Managed Artists (<span id="count">0</span>)</h2>
+        <div id="managedList" class="managed-list">
+            <!-- Items go here -->
+        </div>
+
+        <div class="export-area">
+            <button onclick="generateJSON()" style="width:100%" class="secondary">Generage Configuration JSON</button>
+            <textarea id="output" readonly onclick="this.select()"></textarea>
+            <button onclick="copyToClipboard()" style="width:100%; margin-top:5px;">Copy to Clipboard</button>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">Copied to clipboard!</div>
+
+    <script>
+        // State
+        let managedArtists = [];
+
+        // Load specific default list if empty
+        const defaultNames = ["IVE", "NewJeans", "BTS", "TWICE"];
+
+        // JSONP Helper for iTunes (Robust)
+        function jsonp(url, timeout = 10000) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_' + Math.round(100000 * Math.random());
+                const script = document.createElement('script');
+
+                let timeoutId = null;
+
+                const cleanup = () => {
+                    if (timeoutId) clearTimeout(timeoutId);
+                    if (window[callbackName]) delete window[callbackName];
+                    if (script.parentNode) script.parentNode.removeChild(script);
+                };
+
+                timeoutId = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('Request timed out. API might be blocked or slow.'));
+                }, timeout);
+
+                window[callbackName] = function (data) {
+                    cleanup();
+                    resolve(data);
+                };
+
+                script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+
+                script.onerror = () => {
+                    cleanup();
+                    reject(new Error('Network error or CORS block.'));
+                };
+
+                document.body.appendChild(script);
+            });
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') searchArtist();
+        }
+
+        async function searchArtist() {
+            const term = document.getElementById('searchInput').value;
+            if (!term) return;
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Searching...</p>';
+
+            try {
+                // Search for ALBUMS primarily because Artist entities often lack good images in API
+                // We will group by Artist from the album results
+                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&country=JP&media=music&entity=album&limit=25`;
+                const data = await jsonp(url);
+
+                const uniqueArtists = new Map();
+
+                if (data.results) {
+                    data.results.forEach(item => {
+                        // Normalize Name
+                        if (!item.artistId) return;
+
+                        if (!uniqueArtists.has(item.artistId)) {
+                            uniqueArtists.set(item.artistId, {
+                                id: String(item.artistId),
+                                name: item.artistName,
+                                genre: item.primaryGenreName,
+                                image: item.artworkUrl100 ? item.artworkUrl100.replace('100x100', '600x600') : 'https://placehold.co/200?text=No+Image',
+                                raw: item
+                            });
+                        }
+                    });
+                }
+
+                resultsDiv.innerHTML = '';
+
+                if (uniqueArtists.size === 0) {
+                    resultsDiv.innerHTML = '<p>No results found.</p>';
+                    return;
+                }
+
+                uniqueArtists.forEach(artist => {
+                    const card = document.createElement('div');
+                    card.className = 'artist-card';
+                    card.innerHTML = `
+                        <img src="${artist.image}" alt="${artist.name}" onerror="this.src='https://placehold.co/200?text=Error'">
+                        <h3>${artist.name}</h3>
+                        <p>${artist.genre}</p>
+                    `;
+                    card.onclick = () => addArtist(artist);
+                    resultsDiv.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error(err);
+                resultsDiv.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+            }
+        }
+
+        function addArtist(artist) {
+            // Avoid duplicates
+            if (managedArtists.some(a => a.itunesId === artist.id)) {
+                showNotification('Already added!');
+                return;
+            }
+
+            managedArtists.push({
+                id: `a${Date.now()}`, // Internal ID
+                name: artist.name,
+                itunesId: artist.id,
+                image: artist.image,
+                genre: artist.genre
+            });
+
+            renderManagedList();
+            showNotification(`Added ${artist.name}`);
+        }
+
+        function removeArtist(index) {
+            managedArtists.splice(index, 1);
+            renderManagedList();
+        }
+
+        function renderManagedList() {
+            const list = document.getElementById('managedList');
+            const count = document.getElementById('count');
+
+            list.innerHTML = '';
+            count.textContent = managedArtists.length;
+
+            managedArtists.forEach((artist, index) => {
+                const item = document.createElement('div');
+                item.className = 'managed-item';
+                item.innerHTML = `
+                    <img src="${artist.image}" alt="${artist.name}" onerror="this.src='https://placehold.co/50?text=Error'">
+                    <div class="managed-info">
+                        <strong>${artist.name}</strong><br>
+                        <small>ID: ${artist.itunesId}</small>
+                    </div>
+                    <button class="remove-btn" onclick="removeArtist(${index})"><i class="fa-solid fa-trash"></i></button>
+                `;
+                list.appendChild(item);
+            });
+
+            // Auto generate
+            generateJSON();
+        }
+
+        function generateJSON() {
+            const output = managedArtists.map((a, i) => ({
+                id: `a${i + 1}`,
+                name: a.name,
+                itunesId: a.itunesId,
+                image: a.image, // Static URL
+                isFollowed: i < 5, // Default follow first 5
+                debutDate: "2020-01-01", // Placeholder
+                popularity: 50 // Placeholder
+            }));
+
+            const json = JSON.stringify(output, null, 4);
+            const finalCode = `const artists = ${json};`;
+
+            document.getElementById('output').value = finalCode;
+        }
+
+        function copyToClipboard() {
+            const copyText = document.getElementById("output");
+            copyText.select();
+            document.execCommand("copy");
+            showNotification('Copied JSON to clipboard!');
+        }
+
+        function showNotification(msg) {
+            const notif = document.getElementById('notification');
+            notif.textContent = msg;
+            notif.style.display = 'block';
+            setTimeout(() => {
+                notif.style.display = 'none';
+            }, 2000);
+        }
+
+        // Initial Tip
+        document.getElementById('results').innerHTML = '<p style="color:#666; font-style:italic">Search for artists to build your list.</p>';
+    </script>
+</body>
+
+</html>
