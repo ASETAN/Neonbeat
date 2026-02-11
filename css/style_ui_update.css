@@ -1,0 +1,93 @@
+/* Updated Controls Layout */
+.controls-container {
+    padding: 0 1rem 1rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filter-group,
+.sort-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-filter,
+.btn-sort {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: var(--text-muted);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.btn-filter.active,
+.btn-sort.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+}
+
+/* Updated Release Card - List View Style */
+.release-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    /* remove column based styles if any specific ones existed */
+    min-height: 80px;
+    padding: 0.5rem;
+}
+
+.release-card>div:first-child {
+    /* Container for image and badge */
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    margin-right: 1rem;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.card-cover {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    /* Ensure radius matches container */
+    /* Remove old margin/width styles */
+    margin-bottom: 0;
+}
+
+.card-info {
+    flex: 1;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Remove padding if it was high */
+    padding: 0;
+}
+
+.card-title {
+    font-size: 0.95rem;
+    margin-bottom: 0.2rem;
+    line-height: 1.2;
+}
+
+.card-artist {
+    font-size: 0.8rem;
+}
+
+.release-badge {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* Badge top-left of image */
+    padding: 2px 6px;
+    font-size: 0.6rem;
+}

@@ -1,0 +1,43 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cache
+.cache/
+*.cache
+
+# Environment variables
+.env
+.env.local
+
+# Build outputs (if you add build tools later)
+dist/
+build/
+
+# Dependencies (if you add npm later)
+node_modules/
+
+# Debug files
+debug_fetch.js
+
+# Other projects in the same directory
+../ichigology/
+../hello/
+
+# Cache management page
+clear_cache.html

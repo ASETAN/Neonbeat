@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>NeonBeat - KPOP Releases</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/modal.css">
+</head>
+
+<body>
+    <div id="app">
+        <!-- Main Content Area -->
+        <main class="content-area">
+
+            <!-- VIEW: TIMELINE (Home) -->
+            <section id="view-timeline" class="view active">
+                <header class="app-header glass-header">
+                    <h1>Timeline</h1>
+                </header>
+
+                <div class="timeline-container" id="timeline-container">
+                    <!-- Javascript will populate this -->
+                    <!-- <div class="timeline-item"> ... </div> -->
+                </div>
+
+                <div class="empty-state hidden" id="timeline-empty">
+                    <i class="fa-solid fa-music"></i>
+                    <p>No releases yet from artists you follow.</p>
+                    <button class="btn-primary" onclick="switchTab('view-explore')">Explore Artists</button>
+                </div>
+            </section>
+
+            <!-- VIEW: EXPLORE -->
+            <section id="view-explore" class="view">
+                <header class="app-header glass-header">
+                    <h1>Explore</h1>
+                    <div class="search-bar">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" placeholder="Search releases...">
+                    </div>
+                </header>
+
+                <div class="grid-container" id="explore-grid">
+                    <!-- Javascript will populate this -->
+                </div>
+            </section>
+
+            <!-- VIEW: ARTISTS -->
+            <section id="view-artists" class="view">
+                <header class="app-header glass-header">
+                    <h1>Artists</h1>
+                </header>
+
+                <div class="controls-container">
+                    <div class="filter-group">
+                        <button class="btn-sort active" data-filter="all">All</button>
+                        <button class="btn-sort" data-filter="following">Following</button>
+                    </div>
+                    <div class="sort-group" style="padding-left: 10px; border-left: 1px solid rgba(255,255,255,0.1);">
+                        <button class="btn-sort active" data-sort="popularity">Trend</button>
+                        <button class="btn-sort" data-sort="name">A-Z</button>
+                        <button class="btn-sort" data-sort="debut">Debut</button>
+                    </div>
+                </div>
+
+                <div class="artist-list" id="artist-list">
+                    <!-- Javascript will populate this -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav glass-nav">
+            <button class="nav-item active" data-target="view-timeline">
+                <i class="fa-solid fa-stream"></i>
+                <span>Timeline</span>
+            </button>
+            <button class="nav-item" data-target="view-explore">
+                <i class="fa-solid fa-compass"></i>
+                <span>Explore</span>
+            </button>
+            <button class="nav-item" data-target="view-artists">
+                <i class="fa-solid fa-users"></i>
+                <span>Artists</span>
+            </button>
+        </nav>
+
+        <!-- Release Detail Modal -->
+        <div id="modal-release" class="modal">
+            <div class="modal-backdrop"></div>
+            <div class="modal-content glass-card">
+                <div class="modal-header">
+                    <button class="close-modal"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="modal-body" id="modal-release-body">
+                    <!-- Dynamic Content -->
+                    <img src="" alt="" class="modal-cover" id="modal-cover">
+                    <h2 class="modal-title" id="modal-title">Song Title</h2>
+                    <p class="modal-artist" id="modal-artist">Artist Name</p>
+                    <div class="modal-meta" id="modal-meta">
+                        <span class="badge">Single</span>
+                        <span class="date">2023.10.15</span>
+                    </div>
+
+                    <div class="streaming-links">
+                        <a href="#" class="btn-streaming youtube" id="link-youtube" target="_blank">
+                            <i class="fa-brands fa-youtube"></i> YouTube Music
+                        </a>
+                        <a href="#" class="btn-streaming apple" id="link-apple" target="_blank">
+                            <i class="fa-brands fa-apple"></i> Apple Music
+                        </a>
+                        <a href="#" class="btn-streaming spotify" id="link-spotify" target="_blank">
+                            <i class="fa-brands fa-spotify"></i> Spotify
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
