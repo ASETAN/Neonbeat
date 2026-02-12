@@ -22,7 +22,8 @@
 
     /* Spacing */
     --nav-height: 70px;
-    --header-height: calc(60px + env(safe-area-inset-top));
+    /* Increase base header height calculation to include extra padding buffer */
+    --header-height: calc(75px + env(safe-area-inset-top));
 
     /* Effects */
     --shadow-neon: 0 0 10px rgba(255, 0, 85, 0.4);
@@ -102,20 +103,19 @@ h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: env(safe-area-inset-top) 20px 0 20px;
-    /* Push content down */
+    /* Force 15px extra padding on top of safe area */
+    padding: calc(env(safe-area-inset-top) + 15px) 20px 0 20px;
     z-index: 100;
 }
 
 .controls-container {
     padding: 1rem 1rem 1rem 1rem;
-    /* More top padding to push down */
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 1rem;
-    margin-top: 10px;
-    /* Explicitly move away from header */
+    /* Push filters down further */
+    margin-top: 15px;
 }
 
 .glass-header {
@@ -535,7 +535,8 @@ h3 {
     font-size: 0.85rem;
 }
 
-.streaming-links {
+/* Album Actions (Streaming Links) */
+.album-actions {
     display: flex;
     flex-direction: row;
     /* Horizontal row */
@@ -544,6 +545,31 @@ h3 {
     /* Center icons */
     margin-bottom: 20px;
     /* Space below links */
+}
+
+.album-detail-view {
+    display: flex;
+    flex-direction: column;
+    /* Stack vertically on mobile */
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    .album-detail-view {
+        flex-direction: row;
+        /* Side-by-side on desktop */
+        align-items: flex-start;
+    }
+
+    .album-info-side {
+        width: 40%;
+        position: sticky;
+        top: 0;
+    }
+
+    .album-tracks-side {
+        width: 60%;
+    }
 }
 
 .btn-streaming {
