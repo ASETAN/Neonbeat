@@ -498,18 +498,17 @@ async function openModal(release) {
                 
                 <div class="album-actions">
                     <a href="${collection.collectionViewUrl}" target="_blank" class="btn-streaming apple">
-                        <i class="fa-brands fa-apple"></i> Apple Music
+                        <i class="fa-brands fa-apple"></i> <span>Apple Music</span>
                     </a>
                     <a href="${release.links.spotify}" target="_blank" class="btn-streaming spotify">
-                        <i class="fa-brands fa-spotify"></i> Spotify
+                        <i class="fa-brands fa-spotify"></i> <span>Spotify</span>
                     </a>
                     <a href="${release.links.youtube}" target="_blank" class="btn-streaming youtube">
-                        <i class="fa-brands fa-youtube"></i> YouTube Music
+                        <i class="fa-brands fa-youtube"></i> <span>YouTube Music</span>
                     </a>
                     <a href="${release.links.amazon}" target="_blank" class="btn-streaming amazon">
-                        <i class="fa-brands fa-amazon"></i> Amazon Music
+                        <i class="fa-brands fa-amazon"></i> <span>Amazon Music</span>
                     </a>
-
                 </div>
             </div>
 

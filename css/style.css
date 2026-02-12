@@ -22,7 +22,7 @@
 
     /* Spacing */
     --nav-height: 70px;
-    --header-height: 60px;
+    --header-height: calc(60px + env(safe-area-inset-top));
 
     /* Effects */
     --shadow-neon: 0 0 10px rgba(255, 0, 85, 0.4);
@@ -102,16 +102,20 @@ h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 20px;
+    padding: env(safe-area-inset-top) 20px 0 20px;
+    /* Push content down */
     z-index: 100;
 }
 
 .controls-container {
-    padding: 0 1rem 1rem 1rem;
+    padding: 1rem 1rem 1rem 1rem;
+    /* More top padding to push down */
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 1rem;
+    margin-top: 10px;
+    /* Explicitly move away from header */
 }
 
 .glass-header {
@@ -533,29 +537,46 @@ h3 {
 
 .streaming-links {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    /* Horizontal row */
+    gap: 15px;
+    justify-content: center;
+    /* Center icons */
+    margin-bottom: 20px;
+    /* Space below links */
 }
 
 .btn-streaming {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    padding: 16px;
-    border-radius: 12px;
+    width: 48px;
+    /* Fixed size */
+    height: 48px;
+    border-radius: 50%;
+    /* Circle */
     text-decoration: none;
     font-weight: 600;
     transition: transform 0.1s;
+    font-size: 1.2rem;
+    /* Larger icon */
+    padding: 0;
+    /* Remove padding */
+}
+
+/* Hide text in buttons, show only icon */
+.btn-streaming span {
+    display: none;
 }
 
 .btn-streaming:active {
-    transform: scale(0.98);
+    transform: scale(0.9);
 }
 
 .btn-streaming.youtube {
     background: #212121;
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-streaming.youtube i {
@@ -575,6 +596,37 @@ h3 {
 .btn-streaming.amazon {
     background: #232f3e;
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Make album cover smaller on mobile to save space */
+.album-cover-large {
+    width: 120px;
+    /* Smaller */
+    height: 120px;
+    margin: 0 auto 15px auto;
+    /* Center */
+    display: block;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+}
+
+.album-title-large {
+    font-size: 1.3rem;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.album-artist-large {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.album-meta-large {
+    justify-content: center;
+    margin-bottom: 15px;
 }
 
 /* Empty State */
