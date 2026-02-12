@@ -603,11 +603,14 @@ async function fetchArtistReleases(artist) {
             return [];
         }
 
-        // Use Vercel API Proxy if available
-        const isVercel = window.location.hostname.includes('vercel.app');
+        // Use API Proxy if available (Vercel or Cloudflare Pages)
+        const isApiSupported = window.location.hostname.includes('vercel.app') ||
+            window.location.hostname.includes('pages.dev') ||
+            window.location.hostname.includes('localhost') ||
+            window.location.hostname.includes('127.0.0.1');
         let data;
 
-        if (isVercel) {
+        if (isApiSupported) {
             // Use Vercel API Proxy
             // Increased limit to 200 to get more history. 
             // entity=album includes albums, EPs, and singles (collection types).
@@ -652,11 +655,14 @@ async function fetchArtistReleases(artist) {
 
 async function fetchAlbumDetails(collectionId) {
     try {
-        const isVercel = window.location.hostname.includes('vercel.app');
+        const isApiSupported = window.location.hostname.includes('vercel.app') ||
+            window.location.hostname.includes('pages.dev') ||
+            window.location.hostname.includes('localhost') ||
+            window.location.hostname.includes('127.0.0.1');
         let data;
 
         // Strategy 1: Direct Lookup
-        if (isVercel) {
+        if (isApiSupported) {
             const url = `/api/lookup?id=${collectionId}&entity=song&country=JP`;
             const response = await fetch(url);
             if (!response.ok) throw new Error('API Network response was not ok');
@@ -690,12 +696,12 @@ async function fetchAlbumDetails(collectionId) {
             // Keep specific first.
             // Use attribute=albumTerm to be precise
             const searchTerm = encodeURIComponent(collectionName);
-            const searchUrl = isVercel
+            const searchUrl = isApiSupported
                 ? `/api/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=JP&limit=50`
                 : `https://itunes.apple.com/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=JP&limit=50`;
 
             let searchData;
-            if (isVercel) {
+            if (isApiSupported) {
                 const res = await fetch(searchUrl);
                 searchData = await res.json();
             } else {
