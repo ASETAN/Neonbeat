@@ -14,13 +14,15 @@ let state = {
 const views = {
     timeline: document.getElementById('view-timeline'),
     explore: document.getElementById('view-explore'),
-    artists: document.getElementById('view-artists')
+    artists: document.getElementById('view-artists'),
+    artistDetail: document.getElementById('view-artist-detail')
 };
 
 const containers = {
     timeline: document.getElementById('timeline-container'),
     explore: document.getElementById('explore-grid'),
-    artists: document.getElementById('artist-list')
+    artists: document.getElementById('artist-list'),
+    artistDetail: document.getElementById('artist-detail-container')
 };
 
 const sortButtons = document.querySelectorAll('button[data-sort]');
@@ -69,8 +71,38 @@ async function init() {
         errBanner.style.color = '#ff6b6b';
         errBanner.innerHTML = `<h2>Launch Failed</h2><p>${error.message}</p>`;
         document.body.prepend(errBanner);
+        document.body.prepend(errBanner);
     }
 }
+
+// Helper for Loader
+function showLoader(container, text = 'Loading...') {
+    // Check if loader already exists
+    let loader = container.querySelector('.loader-overlay');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.className = 'loader-overlay';
+        loader.innerHTML = `
+            <div class="loader-ring-wrapper">
+                <div class="neon-ring"></div>
+            </div>
+            <div class="loader-text">${text}</div>
+        `;
+        container.appendChild(loader);
+    } else {
+        // Update text
+        loader.querySelector('.loader-text').textContent = text;
+        loader.style.display = 'flex'; // Show if hidden
+    }
+}
+
+function hideLoader(container) {
+    const loader = container.querySelector('.loader-overlay');
+    if (loader) {
+        loader.remove(); // Or style.display = 'none' if we want to reuse DOM
+    }
+}
+
 
 // Helper to update specific artist image in the DOM without full re-render
 function updateArtistImageInUI(artist) {
@@ -133,6 +165,14 @@ function setupNavigation() {
             switchTab(targetId);
         });
     });
+
+    // Back Button for Artist Detail
+    const btnBackArtist = document.getElementById('btn-back-artist');
+    if (btnBackArtist) {
+        btnBackArtist.addEventListener('click', () => {
+            closeArtistDetail();
+        });
+    }
 }
 
 function setupSortControls() {
@@ -205,7 +245,7 @@ function renderAll() {
     renderArtists();
 }
 
-async function renderTimeline() {
+async function renderTimeline(forceRefresh = false) {
     const container = containers.timeline;
 
     const followedIds = Array.from(state.followedArtists);
@@ -219,8 +259,15 @@ async function renderTimeline() {
         document.getElementById('timeline-empty').classList.add('hidden');
     }
 
-    // specific loading state
-    container.innerHTML = '<div style="text-align:center; padding: 2rem; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Updating timeline...</div>';
+    // Check if we already have content to avoid re-fetching on every tab switch
+    // Only fetch if empty, forced, or it's been a long time (optional, simpler is just check empty)
+    if (!forceRefresh && container.querySelectorAll('.timeline-date-group').length > 0) {
+        // We have data, don't re-render.
+        return;
+    }
+
+    // Loading State
+    showLoader(container, 'Updating timeline...');
 
     try {
         // Fetch releases for all followed artists
@@ -228,7 +275,9 @@ async function renderTimeline() {
         const results = await Promise.all(promises);
         const allFetchedReleases = results.flat();
 
-        container.innerHTML = '';
+        hideLoader(container);
+
+        container.innerHTML = ''; // Only clear NOW
 
         if (allFetchedReleases.length === 0) {
             container.innerHTML = '<div style="text-align:center; padding: 2rem;">No releases found.</div>';
@@ -237,8 +286,6 @@ async function renderTimeline() {
 
         // Group by Date
         const grouped = groupByDate(allFetchedReleases);
-
-        // Sort dates descending
         const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
         sortedDates.forEach(date => {
@@ -261,6 +308,7 @@ async function renderTimeline() {
             container.appendChild(dateEl);
         });
     } catch (err) {
+        hideLoader(container);
         console.error('Timeline render error:', err);
         container.innerHTML = '<div style="text-align:center; padding: 2rem; color: #ff6b6b;">Failed to load releases.</div>';
     }
@@ -272,7 +320,7 @@ async function renderExplore() {
     // Check if already populated to avoid re-fetching on every tab switch (simple cache)
     if (container.children.length > 0 && !container.querySelector('.fa-spinner')) return;
 
-    container.innerHTML = '<div style="text-align:center; padding: 2rem; width: 100%; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><br><br>Loading trending releases...</div>';
+    showLoader(container, 'Loading trending...');
 
     // Fetch for top 5 popular artists as "Trending"
     const topArtists = [...artists].sort((a, b) => b.popularity - a.popularity).slice(0, 5);
@@ -282,7 +330,8 @@ async function renderExplore() {
         const results = await Promise.all(promises);
         const allReleases = results.flat().sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        container.innerHTML = '';
+        hideLoader(container);
+        container.innerHTML = ''; // Clear only after success
 
         allReleases.forEach(release => {
             const card = createReleaseCard(release, true);
@@ -290,6 +339,7 @@ async function renderExplore() {
             container.appendChild(card);
         });
     } catch (err) {
+        hideLoader(container);
         container.innerHTML = '<div style="text-align:center; padding: 2rem; color: #ff6b6b;">Failed to load explore.</div>';
     }
 }
@@ -323,7 +373,7 @@ function renderArtists() {
         const isFollowing = state.followedArtists.has(artist.id);
 
         item.innerHTML = `
-            <div class="artist-info">
+            <div class="artist-info" onclick="openArtistDetail('${artist.id}')" style="cursor: pointer; flex: 1;">
                 <img src="${artist.image}" alt="${artist.name}" class="artist-avatar" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random&color=fff&size=200';">
                 <div style="display:flex; flex-direction:column;">
                     <span class="artist-name">${artist.name}</span>
@@ -347,12 +397,19 @@ function createReleaseCard(release, showDate = false) {
     card.className = 'release-card';
     card.onclick = () => openModal(release);
 
-    const isNew = isRecent(release.date);
+    const badgeStatus = getReleaseStatus(release.date);
+    let badgeHtml = '';
+    if (badgeStatus === 'upcoming') {
+        badgeHtml = '<span class="release-badge badge-upcoming" style="background: #7bdcb5; color: #000;">UPCOMING</span>';
+    } else if (badgeStatus === 'new') {
+        badgeHtml = '<span class="release-badge badge-new">NEW</span>';
+    }
 
     card.innerHTML = `
         <div style="position: relative;">
             <img src="${release.image}" alt="${release.title}" class="card-cover">
-            ${isNew ? '<span class="release-badge badge-new">NEW</span>' : ''}
+            <br> <!-- Spacer -->
+            ${badgeHtml}
         </div>
         <div class="card-info">
             <h3 class="card-title">${release.title}</h3>
@@ -377,6 +434,8 @@ window.toggleFollow = function (artistId) {
     saveState();
     renderArtists(); // Re-render button state
     // Don't re-render timeline immediately to avoid jarring shifts, wait for tab switch or explicit refresh
+    // BUT we must clear it so next visit fetches the new artist list
+    containers.timeline.innerHTML = '';
 };
 
 // Modal Logic
@@ -386,31 +445,43 @@ function setupModal() {
 }
 
 async function openModal(release) {
+    console.log('openModal called for:', release.id);
     modal.el.classList.add('active');
 
     // Modern Loading State
-    const modalBody = document.getElementById('modal-release-body');
-    modalBody.innerHTML = `
-        <div style="display:flex; justify-content:center; align-items:center; height:300px;">
-            <p style="font-size: 1.2rem; color: var(--text-muted);">Loading...</p>
-        </div>
-    `;
+    // Unified Loading State:
+    // 1. Show Modal Container (which has backdrop)
+    // 2. Hide Content via CSS (.loading)
+    // 3. Show Loader on the Modal Container (fullscreen overlay effect)
+
+    modal.el.classList.add('loading');
+
+    // Attach loader to the modal container (fullscreen)
+    showLoader(modal.el, 'Loading details...');
 
     // Fetch Details
     const details = await fetchAlbumDetails(release.id);
 
+    hideLoader(modal.el);
+
     if (!details) {
-        modalBody.innerHTML = '<p class="error">Failed to load details.</p>';
+        // If failed, maybe show error in a toast or just close? 
+        // For now, let's just close to avoid stuck state, or alert.
+        console.error("Failed to load details");
+        closeModal();
         return;
     }
 
+    // Prepare Content
     const { collection, tracks } = details;
 
+    // ... (Build Split Layout HTML) - same as before
     // Build Split Layout
     const releaseYear = new Date(release.date).getFullYear();
     const totalDurationMs = tracks.reduce((acc, t) => acc + t.durationMs, 0);
     const totalDurationMin = Math.ceil(totalDurationMs / 60000);
 
+    const modalBody = document.getElementById('modal-release-body');
     modalBody.innerHTML = `
         <div class="album-detail-view">
             <!-- Left: Album Info -->
@@ -438,10 +509,7 @@ async function openModal(release) {
                     <a href="${release.links.amazon}" target="_blank" class="btn-streaming amazon">
                         <i class="fa-brands fa-amazon"></i> Amazon Music
                     </a>
-                    <div class="action-row">
-                        <button class="btn-icon"><i class="fa-regular fa-heart"></i></button>
-                        <button class="btn-icon"><i class="fa-solid fa-share-nodes"></i></button>
-                    </div>
+
                 </div>
             </div>
 
@@ -462,6 +530,8 @@ async function openModal(release) {
             </div>
         </div>
     `;
+    // Show Content with animation (remove loading class)
+    modal.el.classList.remove('loading');
 }
 
 // Helper for duration
@@ -473,6 +543,7 @@ function formatDuration(ms) {
 
 function closeModal() {
     modal.el.classList.remove('active');
+    modal.el.classList.remove('loading'); // Ensure reset
 }
 
 // Utilities
@@ -492,21 +563,91 @@ function formatDate(dateString) {
     return new Date(dateString).toLocaleDateString(undefined, options);
 }
 
-function isRecent(dateString) {
+function getReleaseStatus(dateString) {
     const date = new Date(dateString);
     const now = new Date();
-    // Check if date is within the last 7 days OR up to 7 days in the future (though usually we just care about recent past for "NEW")
-    // User phrasing "from today within 1 week" suggests a 7 day window.
-    // Let's stick to the previous implementation style but change 30 to 7.
-    const diffTime = now - date;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Reset time components for accurate date comparison
+    date.setHours(0, 0, 0, 0);
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
 
-    // Logic: 
-    // If diffDays is positive, it's in the past. 
-    // If diffDays is negative, it's in the future.
-    // "NEW" usually means "Just released" (e.g. 0-7 days ago).
-    // Let's assume user wants "Recent < 7 days".
-    return diffDays >= 0 && diffDays <= 7;
+    const diffTime = today - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        // Future date -> UPCOMING
+        return 'upcoming';
+    } else if (diffDays >= 0 && diffDays <= 7) {
+        // Today or within last 7 days -> NEW
+        return 'new';
+    }
+    return 'none';
+}
+
+// Start App
+// Artist Detail Logic
+async function openArtistDetail(artistId) {
+    const artist = artists.find(a => a.id === artistId);
+    if (!artist) return;
+
+    // Set Header
+    document.getElementById('artist-detail-name').textContent = artist.name;
+
+    // Show View (Overlay)
+    views.artistDetail.classList.add('active');
+
+    // Render Timeline for this artist
+    const container = containers.artistDetail;
+    // Clear previous artist's data immediately to avoid confusion?
+    // Or overlay?
+    // If we overlay, user sees old artist while loading new.
+    // Let's clear for now as it's a "navigation".
+    container.innerHTML = '';
+    showLoader(container, 'Loading releases...');
+
+    try {
+        const releases = await fetchArtistReleases(artist);
+        hideLoader(container);
+
+        // ... (rest of logic handles empty container)
+        container.innerHTML = '';
+
+        if (releases.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding: 2rem;">No releases found.</div>';
+            return;
+        }
+
+        // Group by Date (reuse existing logic or just list?)
+        // Let's use the timeline grouping for consistency
+        const grouped = groupByDate(releases);
+        const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+        sortedDates.forEach(date => {
+            const group = grouped[date];
+            const dateEl = document.createElement('div');
+            dateEl.className = 'timeline-date-group';
+
+            const dateLabel = document.createElement('div');
+            dateLabel.className = 'timeline-date-label';
+            dateLabel.textContent = formatDate(date);
+            dateEl.appendChild(dateLabel);
+
+            group.forEach(release => {
+                const card = createReleaseCard(release);
+                dateEl.appendChild(card);
+            });
+            container.appendChild(dateEl);
+        });
+
+    } catch (e) {
+        hideLoader(container);
+        console.error(e);
+        container.innerHTML = '<div style="text-align:center; padding: 2rem; color: #ff6b6b;">Failed to load.</div>';
+    }
+}
+
+function closeArtistDetail() {
+    views.artistDetail.classList.remove('active');
 }
 
 // Start App

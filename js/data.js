@@ -404,10 +404,10 @@ const artists = [
         "id": "a45",
         "name": "SEVENTEEN",
         "popularity": 50,
-        "isFollowed": false,
-        "debutDate": "2015-01-01",
-        "itunesId": "993414920",
-        "image": "https://ui-avatars.com/api/?name=SEVENTEEN\u0026background=random\u0026color=fff\u0026size=600"
+        "isFollowed": true,
+        "debutDate": "2020-01-01",
+        "itunesId": "999644772",
+        "image": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/56/ec/da/56ecdab5-26f1-1d03-31f1-c342bd55eba8/23UMGIM70496.rgb.jpg/600x600bb.jpg"
     },
     {
         "id": "a46",
