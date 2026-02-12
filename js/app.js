@@ -1,12 +1,12 @@
 /**
- * NeonBeat App Logic
+ * Neonlight App Logic
  */
 
 // State
 let state = {
     followedArtists: new Set(),
     activeTab: 'view-timeline',
-    sortCriteria: 'popularity', // 'popularity', 'name', 'debut'
+    sortCriteria: 'name', // 'popularity', 'name', 'debut'
     filterMode: 'all' // 'all', 'following'
 };
 
@@ -23,7 +23,7 @@ const containers = {
     artists: document.getElementById('artist-list')
 };
 
-const sortButtons = document.querySelectorAll('.btn-sort');
+const sortButtons = document.querySelectorAll('button[data-sort]');
 
 const modal = {
     el: document.getElementById('modal-release'),
@@ -153,6 +153,17 @@ function setupSortControls() {
             filterButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.filterMode = btn.dataset.filter;
+
+            // User Requirement: Force A-Z sort when "All" is selected
+            if (state.filterMode === 'all') {
+                state.sortCriteria = 'name';
+
+                // Update UI for sort buttons
+                sortButtons.forEach(b => {
+                    b.classList.toggle('active', b.dataset.sort === 'name');
+                });
+            }
+
             renderArtists();
         });
     });
@@ -274,7 +285,7 @@ async function renderExplore() {
         container.innerHTML = '';
 
         allReleases.forEach(release => {
-            const card = createReleaseCard(release);
+            const card = createReleaseCard(release, true);
             card.style.marginLeft = '0';
             container.appendChild(card);
         });
@@ -329,7 +340,7 @@ function renderArtists() {
 }
 
 // Components
-function createReleaseCard(release) {
+function createReleaseCard(release, showDate = false) {
     const artist = artists.find(a => a.id === release.artistId);
 
     const card = document.createElement('div');
@@ -345,7 +356,10 @@ function createReleaseCard(release) {
         </div>
         <div class="card-info">
             <h3 class="card-title">${release.title}</h3>
-            <p class="card-artist">${artist ? artist.name : 'Unknown Artist'}</p>
+            <p class="card-artist">
+                ${artist ? artist.name : 'Unknown Artist'}
+                ${showDate ? `<span style="font-size: 0.85em; opacity: 0.7; margin-left: 5px;">${formatDate(release.date)}</span>` : ''}
+            </p>
         </div>
     `;
 
@@ -481,9 +495,18 @@ function formatDate(dateString) {
 function isRecent(dateString) {
     const date = new Date(dateString);
     const now = new Date();
-    const diffTime = Math.abs(now - date);
+    // Check if date is within the last 7 days OR up to 7 days in the future (though usually we just care about recent past for "NEW")
+    // User phrasing "from today within 1 week" suggests a 7 day window.
+    // Let's stick to the previous implementation style but change 30 to 7.
+    const diffTime = now - date;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays < 30; // "New" if within 30 days
+
+    // Logic: 
+    // If diffDays is positive, it's in the past. 
+    // If diffDays is negative, it's in the future.
+    // "NEW" usually means "Just released" (e.g. 0-7 days ago).
+    // Let's assume user wants "Recent < 7 days".
+    return diffDays >= 0 && diffDays <= 7;
 }
 
 // Start App
