@@ -532,44 +532,45 @@ h3 {
     background: rgba(255, 255, 255, 0.1);
     padding: 5px 12px;
     border-radius: 20px;
-    font-size: 0.85rem;
 }
 
-/* Album Actions (Streaming Links) */
+/* Album Actions (Streaming Links) - Unified Horizontal Row */
 .album-actions {
     display: flex;
     flex-direction: row;
-    /* Horizontal row */
     gap: 15px;
     justify-content: center;
-    /* Center icons */
+    flex-direction: row;
+    /* Horizontal row everywhere */
+    gap: 15px;
+    justify-content: center;
+    /* Center horizontally */
+    flex-wrap: wrap;
+    /* Allow wrapping */
     margin-bottom: 20px;
-    /* Space below links */
 }
 
+/* UNIFIED LAYOUT: SINGLE COLUMN VERTICAL (MOBILE-FIRST) */
 .album-detail-view {
     display: flex;
     flex-direction: column;
-    /* Stack vertically on mobile */
+    /* Stack globally */
     gap: 20px;
+    align-items: center;
+    /* Center content */
+    padding-top: 60px;
+    /* Added spacing for header */
 }
 
-@media (min-width: 768px) {
-    .album-detail-view {
-        flex-direction: row;
-        /* Side-by-side on desktop */
-        align-items: flex-start;
-    }
+.album-info-side {
+    width: 100%;
+    text-align: center;
+}
 
-    .album-info-side {
-        width: 40%;
-        position: sticky;
-        top: 0;
-    }
-
-    .album-tracks-side {
-        width: 60%;
-    }
+.album-tracks-side {
+    width: 100%;
+    max-width: 600px;
+    /* Limit width on PC */
 }
 
 .btn-streaming {
@@ -577,32 +578,59 @@ h3 {
     align-items: center;
     justify-content: center;
     width: 48px;
-    /* Fixed size */
+    /* Fixed size circle */
     height: 48px;
     border-radius: 50%;
-    /* Circle */
     text-decoration: none;
     font-weight: 600;
     transition: transform 0.1s;
     font-size: 1.2rem;
-    /* Larger icon */
     padding: 0;
-    /* Remove padding */
-}
-
-/* Hide text in buttons, show only icon */
-.btn-streaming span {
-    display: none;
 }
 
 .btn-streaming:active {
     transform: scale(0.9);
 }
 
+.btn-streaming span {
+    display: none;
+    /* Hide Text Globally */
+}
+
+/* Album Cover Default */
+.album-cover-large {
+    width: 100%;
+    height: auto;
+    max-width: 200px;
+    /* Reasonable size for all devices */
+    margin: 0 auto 15px auto;
+    display: block;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+}
+
+.album-title-large {
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+/* REMOVED: DESKTOP SPLIT VIEW OVERRIDE */
+/* Only keep minor aesthetic adjustments for larger screens if needed */
+@media (min-width: 768px) {
+    .album-cover-large {
+        max-width: 250px;
+        /* Slightly larger on PC */
+    }
+
+    .album-title-large {
+        font-size: 1.8rem;
+    }
+}
+
 .btn-streaming.youtube {
     background: #212121;
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .btn-streaming.youtube i {
@@ -614,6 +642,87 @@ h3 {
     color: white;
 }
 
+/* --- Track List Styling --- */
+.tracklist {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.track-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    /* Optional: subtle border or background */
+    /* border-bottom: 1px solid rgba(255, 255, 255, 0.05); */
+}
+
+.track-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    /* Hover effect */
+}
+
+.track-num {
+    width: 30px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-right: 15px;
+    font-weight: 500;
+}
+
+.track-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    /* Text overflow */
+}
+
+.track-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.track-artist {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.track-duration {
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+    margin-left: 15px;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* --- Mobile Specific Tweaks for Tracks --- */
+@media (max-width: 767px) {
+    .track-item {
+        padding: 10px 12px;
+        /* Slightly tighter on mobile */
+    }
+
+    .track-title {
+        font-size: 0.95rem;
+    }
+}
+
 .btn-streaming.spotify {
     background: #1db954;
     color: black;
@@ -622,7 +731,6 @@ h3 {
 .btn-streaming.amazon {
     background: #232f3e;
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Make album cover smaller on mobile to save space */
