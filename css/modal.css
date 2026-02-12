@@ -186,6 +186,7 @@
     .album-tracks-side {
         width: 100%;
         padding: 1rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
 
     .modal-content.glass-card {
