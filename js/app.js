@@ -1,5 +1,5 @@
 /**
- * Neonlight App Logic
+ * Neonbeat App Logic
  */
 
 // State

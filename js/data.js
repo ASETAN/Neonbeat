@@ -1,5 +1,5 @@
 ﻿/**
- * Neonlight Static Data
+ * Neonbeat Static Data
  * Generated via Script
  */
 
