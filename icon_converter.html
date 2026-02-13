@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Icon Converter</title>
+</head>
+
+<body>
+    <img id="source" src="icons/favicon.svg" width="512" height="512" style="display: none;" onload="convert()">
+    <canvas id="canvas" width="512" height="512"></canvas>
+    <textarea id="output"></textarea>
+    <div id="status">Converting...</div>
+
+    <script>
+        function convert() {
+            try {
+                const img = document.getElementById('source');
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Clear and draw
+                ctx.clearRect(0, 0, 512, 512);
+                ctx.drawImage(img, 0, 0, 512, 512);
+
+                // Get Base64
+                const dataURL = canvas.toDataURL('image/png');
+                document.getElementById('output').value = dataURL;
+                document.getElementById('status').innerText = "DONE";
+            } catch (e) {
+                document.getElementById('status').innerText = "ERROR: " + e.message;
+            }
+        }
+        // Fallback if onload doesn't fire immediately (cached)
+        window.onload = function () {
+            const img = document.getElementById('source');
+            if (img.complete) convert();
+        }
+    </script>
+</body>
+
+</html>
