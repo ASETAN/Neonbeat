@@ -43,7 +43,11 @@ body {
     background-color: var(--bg-dark);
     color: var(--text-main);
     overflow: hidden;
+    height: 100dvh;
     height: 100vh;
+    /* Fallback for older browsers */
+    height: 100dvh;
+    /* Use dvh if available to account for dynamic address bar */
     touch-action: manipulation;
     /* Prevent double-tap zoom */
 }
@@ -103,7 +107,8 @@ h3 {
     overflow-y: auto;
     scrollbar-gutter: stable;
     padding-bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom));
-    padding-top: var(--header-height);
+    /* Removed padding-top so sticky header works correctly in flow */
+    padding-top: 0;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -119,7 +124,7 @@ h3 {
 
 /* Header */
 .app-header {
-    position: absolute;
+    position: sticky;
     top: 0;
     left: 0;
     width: 100%;
