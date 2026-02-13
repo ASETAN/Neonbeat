@@ -606,6 +606,7 @@ async function fetchArtistReleases(artist) {
         // Use API Proxy if available (Vercel or Cloudflare Pages)
         const isApiSupported = window.location.hostname.includes('vercel.app') ||
             window.location.hostname.includes('pages.dev') ||
+            window.location.hostname.includes('workers.dev') ||
             window.location.hostname.includes('localhost') ||
             window.location.hostname.includes('127.0.0.1');
         let data;
@@ -657,6 +658,7 @@ async function fetchAlbumDetails(collectionId) {
     try {
         const isApiSupported = window.location.hostname.includes('vercel.app') ||
             window.location.hostname.includes('pages.dev') ||
+            window.location.hostname.includes('workers.dev') ||
             window.location.hostname.includes('localhost') ||
             window.location.hostname.includes('127.0.0.1');
         let data;
