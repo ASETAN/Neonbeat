@@ -7,7 +7,8 @@ let state = {
     followedArtists: new Set(),
     activeTab: 'view-timeline',
     sortCriteria: 'name', // 'popularity', 'name', 'debut'
-    filterMode: 'all' // 'all', 'following'
+    filterMode: 'all', // 'all', 'following'
+    preferredApp: 'apple' // 'apple', 'spotify', 'youtube', 'amazon'
 };
 
 // DOM Elements
@@ -36,11 +37,16 @@ const modal = {
     artist: document.getElementById('modal-artist'),
     meta: document.getElementById('modal-meta'),
     links: {
-        youtube: document.getElementById('link-youtube'),
-        apple: document.getElementById('link-apple'),
-        spotify: document.getElementById('link-spotify'),
         amazon: document.getElementById('link-amazon')
     }
+};
+
+const settingsModal = {
+    el: document.getElementById('modal-settings'),
+    closeBtn: document.getElementById('close-settings'),
+    inputs: document.querySelectorAll('input[name="music-app"]'),
+    trigger: document.getElementById('btn-settings'),
+    backdrop: document.querySelector('#modal-settings .modal-backdrop')
 };
 
 // Initialization
@@ -50,7 +56,11 @@ async function init() {
         loadState();
         setupNavigation();
         setupSortControls();
+        setupNavigation();
+        setupSortControls();
         setupModal();
+        setupSettings();
+        setupSwipeToClose();
 
         // Render initial views with placeholders
         console.log('🎨 Initial render...');
@@ -135,6 +145,11 @@ function loadState() {
         initializeDefaultFollows();
         console.log('First visit - initialized with default follows');
     }
+
+    const savedApp = localStorage.getItem('preferredApp');
+    if (savedApp) {
+        state.preferredApp = savedApp;
+    }
 }
 
 function initializeDefaultFollows() {
@@ -152,7 +167,8 @@ function saveState() {
     const followedList = [...state.followedArtists];
     localStorage.setItem('followedArtists', JSON.stringify(followedList));
     localStorage.setItem('lastSync', new Date().toISOString());
-    console.log('Saved followed artists to localStorage:', followedList);
+    localStorage.setItem('preferredApp', state.preferredApp);
+    console.log('Saved state', state);
 }
 
 // Navigation
@@ -322,13 +338,22 @@ async function renderExplore() {
 
     showLoader(container, 'Loading trending...');
 
-    // Fetch for top 5 popular artists as "Trending"
-    const topArtists = [...artists].sort((a, b) => b.popularity - a.popularity).slice(0, 5);
+    showLoader(container, 'Loading recent releases...');
+
+    // Fetch for ALL artists (New Requirement: All registered artists, last 1 month)
+    const allArtists = [...artists];
+    const ONE_MONTH_AGO = new Date();
+    ONE_MONTH_AGO.setMonth(ONE_MONTH_AGO.getMonth() - 1);
 
     try {
-        const promises = topArtists.map(artist => fetchArtistReleases(artist));
+        // We might want to chunk this if there are too many artists, but for ~60 it's fine.
+        const promises = allArtists.map(artist => fetchArtistReleases(artist));
         const results = await Promise.all(promises);
-        const allReleases = results.flat().sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Flatten and Filter
+        const allReleases = results.flat()
+            .filter(release => new Date(release.date) >= ONE_MONTH_AGO)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
 
         hideLoader(container);
         container.innerHTML = ''; // Clear only after success
@@ -516,13 +541,14 @@ async function openModal(release) {
             <div class="album-tracks-side">
                 <div class="tracklist">
                     ${tracks.map((track, index) => `
-                        <div class="track-item" onclick="window.open('${collection.collectionViewUrl}', '_blank')">
+                        <div class="track-item" onclick="openTrack(this, '${track.title.replace(/'/g, "\\'")}', '${track.artist.replace(/'/g, "\\'")}', '${collection.collectionViewUrl}', '${collection.collectionName.replace(/'/g, "\\'")}' )">
                             <span class="track-num">${index + 1}</span>
                             <div class="track-info">
                                 <span class="track-title">${track.title}</span>
-                                <span class="track-artist">${track.artist}</span> <!-- distinct artist for complilations -->
+                                <span class="track-artist">${track.artist}</span>
                             </div>
-                            <span class="track-duration">${formatDuration(track.durationMs)}</span>
+                            <!-- Mobile visual cue -->
+                            <i class="fa-solid fa-play track-play-icon"></i>
                         </div>
                     `).join('')}
                 </div>
@@ -647,6 +673,124 @@ async function openArtistDetail(artistId) {
 
 function closeArtistDetail() {
     views.artistDetail.classList.remove('active');
+}
+
+// Settings Logic
+function setupSettings() {
+    if (settingsModal.trigger) {
+        settingsModal.trigger.addEventListener('click', () => {
+            // Set current value
+            settingsModal.inputs.forEach(input => {
+                if (input.value === state.preferredApp) {
+                    input.checked = true;
+                }
+            });
+            settingsModal.el.classList.add('active');
+        });
+    }
+
+    if (settingsModal.closeBtn) settingsModal.closeBtn.addEventListener('click', closeSettings);
+    if (settingsModal.backdrop) settingsModal.backdrop.addEventListener('click', closeSettings);
+
+    settingsModal.inputs.forEach(input => {
+        input.addEventListener('change', (e) => {
+            state.preferredApp = e.target.value;
+            saveState();
+            // Optional: Close on selection? No, let user explicity close.
+        });
+    });
+}
+
+function closeSettings() {
+    settingsModal.el.classList.remove('active');
+}
+
+// Track Opening Logic
+window.openTrack = function (el, title, artist, appleUrl, albumName) {
+    const query = encodeURIComponent(`${artist} ${title}`);
+    const albumQuery = encodeURIComponent(`${artist} ${albumName}`);
+    let url = '';
+
+    // Add visual feedback
+    el.style.backgroundColor = 'rgba(255,0,85,0.2)';
+    setTimeout(() => { el.style.backgroundColor = ''; }, 300);
+
+    switch (state.preferredApp) {
+        case 'spotify':
+            url = `https://open.spotify.com/search/${query}`;
+            break;
+        case 'youtube':
+            url = `https://music.youtube.com/search?q=${query}`;
+            break;
+        case 'amazon':
+            url = `https://music.amazon.com/search/${query}`;
+            break;
+        case 'apple':
+        default:
+            // For Apple, we have a direct link often, but it goes to album.
+            // If we have a trackId it would be better, but simple album link is fine.
+            // We can also search if we prefer.
+            url = appleUrl || `https://music.apple.com/jp/search?term=${query}`;
+            break;
+    }
+
+    window.open(url, '_blank');
+};
+
+// Swipe to Close Logic for Modal
+function setupSwipeToClose() {
+    const content = document.querySelector('.modal-content');
+    const modal = document.getElementById('modal-release');
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    // Use header as handle or whole content?
+    // User asked for "swipe down", typically on the handle or header area if content scrolls.
+    // If we bind to content, scrolling might conflict. 
+    // Best practice: Bind to a handle area or detect if scroll is at top.
+
+    // Let's bind to the modal-header only for safety, or check scrollTop.
+    // Given the HTML structure, the modal-content has overflow: visible (usually), 
+    // but the inner parts might scroll? No, modal-content usually scrolls.
+    // Let's just bind to the header for the "swipe handle" feel.
+
+    const handleArea = document.querySelector('.modal-header');
+
+    handleArea.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        content.style.transition = 'none'; // Disable transition for direct follow
+    }, { passive: true });
+
+    handleArea.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        if (diff > 0) { // Dragging down
+            // Resistance or direct?
+            content.style.transform = `translateY(${diff}px)`;
+        }
+    }, { passive: true });
+
+    handleArea.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        content.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+        const diff = currentY - startY;
+        if (diff > 100) { // Threshold to close
+            closeModal();
+            // Reset transform is handled by class toggle, but needed for animation consistency
+            setTimeout(() => {
+                content.style.transform = '';
+            }, 300);
+        } else {
+            // Snap back
+            content.style.transform = '';
+        }
+    });
 }
 
 // Start App

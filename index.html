@@ -24,7 +24,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="css/style.css?v=unified">
+    <link rel="stylesheet" href="css/style.css?v=no_handle">
     <link rel="stylesheet" href="css/modal.css">
     <script>
         // Global Error Handler for Debugging
@@ -56,6 +56,9 @@
             <section id="view-timeline" class="view active">
                 <header class="app-header glass-header">
                     <h1>Timeline</h1>
+                    <button class="btn-icon" id="btn-settings" aria-label="Settings">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
                 </header>
 
                 <div class="timeline-container" id="timeline-container">
@@ -141,6 +144,7 @@
             <div class="modal-backdrop"></div>
             <div class="modal-content glass-card">
                 <div class="modal-header">
+                    <div class="swipe-handle"></div>
                     <button class="close-modal"><i class="fa-solid fa-times"></i></button>
                 </div>
                 <div class="modal-body" id="modal-release-body">
@@ -166,6 +170,40 @@
                         <a href="#" class="btn-streaming amazon" id="link-amazon" target="_blank">
                             <i class="fa-brands fa-amazon"></i> Amazon Music
                         </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Settings Modal -->
+        <div id="modal-settings" class="modal">
+            <div class="modal-backdrop"></div>
+
+            <div class="settings-wrapper">
+                <div class="settings-header-outside">
+                    <h2 class="settings-title-text">デフォルトミュージックアプリ設定</h2>
+                    <button class="close-modal-outside" id="close-settings"><i class="fa-solid fa-times"></i></button>
+                </div>
+
+                <div class="modal-content glass-card start-modal settings-card-body">
+                    <div class="modal-body" style="padding: 10px 0;">
+                        <div class="settings-group">
+                            <label class="setting-option">
+                                <input type="radio" name="music-app" value="apple" checked>
+                                <span class="setting-label"><i class="fa-brands fa-apple"></i> Apple Music</span>
+                            </label>
+                            <label class="setting-option">
+                                <input type="radio" name="music-app" value="spotify">
+                                <span class="setting-label"><i class="fa-brands fa-spotify"></i> Spotify</span>
+                            </label>
+                            <label class="setting-option">
+                                <input type="radio" name="music-app" value="youtube">
+                                <span class="setting-label"><i class="fa-brands fa-youtube"></i> YouTube Music</span>
+                            </label>
+                            <label class="setting-option">
+                                <input type="radio" name="music-app" value="amazon">
+                                <span class="setting-label"><i class="fa-brands fa-amazon"></i> Amazon Music</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>

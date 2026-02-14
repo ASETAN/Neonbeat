@@ -516,10 +516,44 @@ h3 {
     }
 }
 
+/* Modal Header with Safe Area for Notch */
 .modal-header {
     display: flex;
-    justify-content: flex-end;
-    margin-bottom: 10px;
+    justify-content: center;
+    /* Center the swipe handle */
+    align-items: center;
+    position: relative;
+    padding-top: max(25px, env(safe-area-inset-top));
+    /* More space for swipe handle */
+    padding-bottom: 15px;
+    min-height: 50px;
+}
+
+/* Swipe Handle - HIDDEN as per user request */
+.swipe-handle {
+    display: none;
+    /* 
+    width: 40px;
+    height: 5px;
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 5px;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.5;
+    */
+}
+
+.modal-header .close-modal {
+    position: absolute;
+    right: 20px;
+    /* Move inwards slightly */
+    top: 50%;
+    transform: translateY(-50%);
+    /* Center vertically relative to header */
+    margin-top: 5px;
+    /* Adjust for safe area padding skew if needed */
 }
 
 .close-modal {
@@ -540,9 +574,16 @@ h3 {
 }
 
 .modal-title {
-    font-size: 1.8rem;
-    margin-bottom: 5px;
+    font-size: 1.5rem;
+    margin-bottom: 0;
     line-height: 1.2;
+    text-align: center;
+    padding: 0 80px;
+    /* Significantly increase padding to absolutely avoid overlap */
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .modal-artist {
@@ -692,8 +733,17 @@ h3 {
 
 .track-item:hover {
     background: rgba(255, 255, 255, 0.08);
-    /* Hover effect */
 }
+
+.track-item:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.99);
+    /* Subtle press effect */
+}
+
+/* Play/Link Icon for Tracks */
+/* Play/Link Icon for Tracks - REMOVED (Replaced by persistent icon) */
+/* .track-item::after { ... } */
 
 .track-num {
     width: 30px;
@@ -962,6 +1012,7 @@ h3 {
     }
 }
 
+
 @keyframes pulse {
     0% {
         opacity: 0.6;
@@ -972,4 +1023,226 @@ h3 {
         opacity: 1;
         filter: blur(0px);
     }
+}
+
+
+/* Settings Styles */
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.settings-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    margin-top: 20px;
+    /* Add spacing from header */
+}
+
+.settings-header {
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+#modal-settings {
+    align-items: center !important;
+    /* Vertically center the settings modal on the screen */
+    justify-content: center !important;
+    /* Horizontally center */
+    padding: 20px !important;
+    /* Ensure separation from edges */
+}
+
+#modal-settings .modal-content {
+    border-radius: 20px !important;
+    /* Full rounded corners (card style), not sheet style */
+    max-height: 90vh !important;
+    width: 100% !important;
+    max-width: 400px !important;
+    /* Slightly narrower for a settings card */
+    margin: auto !important;
+    /* Extra centering safety */
+    transform: translateY(0) !important;
+    /* Ensure it's not starting from bottom */
+}
+
+.setting-option {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.setting-option:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.setting-option input[type="radio"] {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--text-muted);
+    border-radius: 50%;
+    margin-right: 15px;
+    position: relative;
+    outline: none;
+}
+
+.setting-option input[type="radio"]:checked {
+    border-color: var(--primary);
+    background: var(--primary);
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.4);
+}
+
+.setting-label {
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Settings Header Layout - Grid - FORCE APPLY */
+.modal-header.settings-header-layout {
+    display: grid !important;
+    grid-template-columns: 50px 1fr 50px !important;
+    align-items: center !important;
+    padding-bottom: 5px !important;
+    padding-top: max(20px, env(safe-area-inset-top)) !important;
+    justify-content: stretch !important;
+}
+
+.modal-header.settings-header-layout .modal-title {
+    grid-column: 2 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.modal-header.settings-header-layout .close-modal {
+    grid-column: 3 !important;
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.modal-header.settings-header-layout .swipe-handle {
+    display: none !important;
+    /* Hide swipe handle in settings to clean up space */
+}
+
+/* Settings Outside Header Layout */
+.settings-wrapper {
+    width: 85%;
+    max-width: 340px;
+    /* Slightly smaller */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 10vh;
+    /* Push down lower */
+    pointer-events: none;
+    /* Let clicks pass through to backdrop */
+}
+
+.settings-header-outside {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    z-index: 1002;
+    pointer-events: auto;
+    /* Re-enable clicks */
+}
+
+.settings-title-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin: 0;
+}
+
+.close-modal-outside {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-main);
+    font-size: 1.2rem;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    pointer-events: auto;
+}
+
+#modal-settings .settings-card-body {
+    background: #1e1e24;
+    border-radius: 20px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    transform: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    pointer-events: auto;
+    /* Re-enable clicks */
+}
+
+/* Remove old centering force on modal content itself since wrapper handles it */
+/* Resetting overrides if needed, but the specific class above handles it */
+
+/* Mobile Track Play Icon */
+.track-play-icon {
+    font-size: 0.9rem;
+    color: var(--primary);
+    opacity: 0.7;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+/* Ensure track item layout handles the icon */
+.track-item {
+    padding-right: 5px;
+    /* Adjust padding */
 }
