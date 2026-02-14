@@ -739,50 +739,62 @@ window.openTrack = function (el, title, artist, appleUrl, albumName) {
 
 // Swipe to Close Logic for Modal
 function setupSwipeToClose() {
-    const content = document.querySelector('.modal-content');
-    const modal = document.getElementById('modal-release');
+    const content = document.querySelector('#modal-release .modal-content');
     let startY = 0;
-    let currentY = 0;
     let isDragging = false;
 
-    // Use header as handle or whole content?
-    // User asked for "swipe down", typically on the handle or header area if content scrolls.
-    // If we bind to content, scrolling might conflict. 
-    // Best practice: Bind to a handle area or detect if scroll is at top.
+    // Bind to the entire content for "swipe anywhere"
+    // We must handle scroll conflict: only drag if scrollTop is 0 and pulling down
 
-    // Let's bind to the modal-header only for safety, or check scrollTop.
-    // Given the HTML structure, the modal-content has overflow: visible (usually), 
-    // but the inner parts might scroll? No, modal-content usually scrolls.
-    // Let's just bind to the header for the "swipe handle" feel.
-
-    const handleArea = document.querySelector('.modal-header');
-
-    handleArea.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY;
-        isDragging = true;
-        content.style.transition = 'none'; // Disable transition for direct follow
-    }, { passive: true });
-
-    handleArea.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-
-        if (diff > 0) { // Dragging down
-            // Resistance or direct?
-            content.style.transform = `translateY(${diff}px)`;
+    content.addEventListener('touchstart', (e) => {
+        // Only allow drag initiation if we are at the top
+        if (content.scrollTop <= 0) {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            // We don't disable transition here yet, to allow normal scroll start
+        } else {
+            isDragging = false;
         }
     }, { passive: true });
 
-    handleArea.addEventListener('touchend', (e) => {
+    content.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
+
+        const currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        // Only handle dragging DOWN (positive diff)
+        if (diff > 0) {
+            // Check again if we are at top (in case momentum scrolling happened)
+            if (content.scrollTop <= 0) {
+                // Prevent default only if we are actually dragging the modal to avoid pull-to-refresh
+                if (e.cancelable) e.preventDefault();
+
+                content.style.transition = 'none';
+                content.style.transform = `translateY(${diff}px)`;
+            } else {
+                isDragging = false; // We scrolled down, cancel drag
+            }
+        } else {
+            // Scrolling up - let efficient native scroll handle it
+            isDragging = false;
+        }
+    }, { passive: false }); // Non-passive to allow preventDefault
+
+    content.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+
+        // Check current transform to see if we moved enough
+        // We can't rely just on touch position since we might have cancelled drag
+        const style = window.getComputedStyle(content);
+        const matrix = new WebKitCSSMatrix(style.transform);
+        const diff = matrix.m42; // TranslateY value
+
         isDragging = false;
         content.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
 
-        const diff = currentY - startY;
         if (diff > 100) { // Threshold to close
             closeModal();
-            // Reset transform is handled by class toggle, but needed for animation consistency
             setTimeout(() => {
                 content.style.transform = '';
             }, 300);

@@ -505,6 +505,15 @@ h3 {
     transform: translateY(0);
 }
 
+/* Ensure modal never touches the very top on mobile */
+#modal-release .modal-content {
+    max-height: 90vh;
+    /* Leave 10% space at top */
+    overflow-y: auto;
+    /* Scroll internally */
+    border-radius: 20px 20px 0 0;
+}
+
 @media (min-width: 600px) {
     .modal {
         align-items: center;
