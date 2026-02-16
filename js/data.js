@@ -596,7 +596,7 @@ function jsonp(url, timeout = 10000) {
     });
 }
 
-async function fetchArtistReleases(artist) {
+async function fetchArtistReleases(artist, country = 'JP') {
     try {
         if (!artist.itunesId) {
             console.warn(`Skipping releases for ${artist.name} (No ID)`);
@@ -614,19 +614,19 @@ async function fetchArtistReleases(artist) {
         if (isApiSupported) {
             try {
                 // Use Vercel/Cloudflare API Proxy
-                const url = `/api/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=JP`;
+                const url = `/api/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 data = await response.json();
             } catch (proxyError) {
                 console.warn('API Proxy failed, falling back to JSONP:', proxyError);
                 // Fallback to JSONP
-                const url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=JP`;
+                const url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
                 data = await jsonp(url);
             }
         } else {
             // Use JSONP locally
-            const url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=JP`;
+            const url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
             data = await jsonp(url);
         }
 
@@ -659,7 +659,7 @@ async function fetchArtistReleases(artist) {
     }
 }
 
-async function fetchAlbumDetails(collectionId) {
+async function fetchAlbumDetails(collectionId, country = 'JP') {
     try {
         const isApiSupported = window.location.hostname.includes('vercel.app') ||
             window.location.hostname.includes('pages.dev') ||
@@ -671,17 +671,17 @@ async function fetchAlbumDetails(collectionId) {
         // Strategy 1: Direct Lookup
         if (isApiSupported) {
             try {
-                const url = `/api/lookup?id=${collectionId}&entity=song&country=JP`;
+                const url = `/api/lookup?id=${collectionId}&entity=song&country=${country}`;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`API Error: ${response.status}`);
                 data = await response.json();
             } catch (proxyError) {
                 console.warn('API Proxy failed, falling back to JSONP:', proxyError);
-                const url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&country=JP`;
+                const url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&country=${country}`;
                 data = await jsonp(url);
             }
         } else {
-            const url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&country=JP`;
+            const url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&country=${country}`;
             data = await jsonp(url);
         }
 
@@ -710,8 +710,8 @@ async function fetchAlbumDetails(collectionId) {
             // Use attribute=albumTerm to be precise
             const searchTerm = encodeURIComponent(collectionName);
             const searchUrl = isApiSupported
-                ? `/api/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=JP&limit=50`
-                : `https://itunes.apple.com/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=JP&limit=50`;
+                ? `/api/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=${country}&limit=50`
+                : `https://itunes.apple.com/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=${country}&limit=50`;
 
             let searchData;
             if (isApiSupported) {
@@ -721,7 +721,7 @@ async function fetchAlbumDetails(collectionId) {
                     searchData = await res.json();
                 } catch (proxyError) {
                     console.warn('API Search Proxy failed, falling back to JSONP:', proxyError);
-                    searchData = await jsonp(isApiSupported ? `https://itunes.apple.com/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=JP&limit=50` : searchUrl);
+                    searchData = await jsonp(isApiSupported ? `https://itunes.apple.com/search?term=${searchTerm}&attribute=albumTerm&entity=song&country=${country}&limit=50` : searchUrl);
                 }
             } else {
                 searchData = await jsonp(searchUrl);

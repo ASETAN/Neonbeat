@@ -8,7 +8,8 @@ let state = {
     activeTab: 'view-timeline',
     sortCriteria: 'name', // 'popularity', 'name', 'debut'
     filterMode: 'all', // 'all', 'following'
-    preferredApp: 'apple' // 'apple', 'spotify', 'youtube', 'amazon'
+    preferredApp: 'apple', // 'apple', 'spotify', 'youtube', 'amazon'
+    region: 'jp' // 'jp', 'global', 'kr'
 };
 
 // DOM Elements
@@ -44,7 +45,8 @@ const modal = {
 const settingsModal = {
     el: document.getElementById('modal-settings'),
     closeBtn: document.getElementById('close-settings'),
-    inputs: document.querySelectorAll('input[name="music-app"]'),
+    musicAppInputs: document.querySelectorAll('input[name="music-app"]'),
+    regionInputs: document.querySelectorAll('input[name="region"]'),
     trigger: document.getElementById('btn-settings'),
     backdrop: document.querySelector('#modal-settings .modal-backdrop')
 };
@@ -54,6 +56,7 @@ async function init() {
     try {
         console.log('🚀 App initialization started');
         loadState();
+        updateUIText(); // Apply translation
         setupNavigation();
         setupSortControls();
         setupNavigation();
@@ -150,6 +153,11 @@ function loadState() {
     if (savedApp) {
         state.preferredApp = savedApp;
     }
+
+    const savedRegion = localStorage.getItem('region');
+    if (savedRegion) {
+        state.region = savedRegion;
+    }
 }
 
 function initializeDefaultFollows() {
@@ -168,6 +176,7 @@ function saveState() {
     localStorage.setItem('followedArtists', JSON.stringify(followedList));
     localStorage.setItem('lastSync', new Date().toISOString());
     localStorage.setItem('preferredApp', state.preferredApp);
+    localStorage.setItem('region', state.region);
     console.log('Saved state', state);
 }
 
@@ -287,7 +296,8 @@ async function renderTimeline(forceRefresh = false) {
 
     try {
         // Fetch releases for all followed artists
-        const promises = followedArtistsList.map(artist => fetchArtistReleases(artist));
+        const country = getCountryCode(state.region);
+        const promises = followedArtistsList.map(artist => fetchArtistReleases(artist, country));
         const results = await Promise.all(promises);
         const allFetchedReleases = results.flat();
 
@@ -347,7 +357,8 @@ async function renderExplore() {
 
     try {
         // We might want to chunk this if there are too many artists, but for ~60 it's fine.
-        const promises = allArtists.map(artist => fetchArtistReleases(artist));
+        const country = getCountryCode(state.region);
+        const promises = allArtists.map(artist => fetchArtistReleases(artist, country));
         const results = await Promise.all(promises);
 
         // Flatten and Filter
@@ -397,6 +408,9 @@ function renderArtists() {
 
         const isFollowing = state.followedArtists.has(artist.id);
 
+        const resources = window.uiText[state.region] || window.uiText['jp'];
+        const followText = isFollowing ? resources.btn_following : resources.btn_follow;
+
         item.innerHTML = `
             <div class="artist-info" onclick="openArtistDetail('${artist.id}')" style="cursor: pointer; flex: 1;">
                 <img src="${artist.image}" alt="${artist.name}" class="artist-avatar" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(artist.name)}&background=random&color=fff&size=200';">
@@ -406,7 +420,7 @@ function renderArtists() {
                 </div>
             </div>
             <button class="btn-follow ${isFollowing ? 'following' : ''}" onclick="toggleFollow('${artist.id}')">
-                ${isFollowing ? 'Following' : 'Follow'}
+                ${followText}
             </button>
         `;
 
@@ -485,7 +499,8 @@ async function openModal(release) {
     showLoader(modal.el, 'Loading details...');
 
     // Fetch Details
-    const details = await fetchAlbumDetails(release.id);
+    const country = getCountryCode(state.region);
+    const details = await fetchAlbumDetails(release.id, country);
 
     hideLoader(modal.el);
 
@@ -631,7 +646,8 @@ async function openArtistDetail(artistId) {
     showLoader(container, 'Loading releases...');
 
     try {
-        const releases = await fetchArtistReleases(artist);
+        const country = getCountryCode(state.region);
+        const releases = await fetchArtistReleases(artist, country);
         hideLoader(container);
 
         // ... (rest of logic handles empty container)
@@ -676,27 +692,58 @@ function closeArtistDetail() {
 }
 
 // Settings Logic
+// Settings Logic
 function setupSettings() {
+    // Open Modal
     if (settingsModal.trigger) {
         settingsModal.trigger.addEventListener('click', () => {
-            // Set current value
-            settingsModal.inputs.forEach(input => {
+            // Set current Music App UI state
+            settingsModal.musicAppInputs.forEach(input => {
                 if (input.value === state.preferredApp) {
                     input.checked = true;
                 }
             });
+
+            // Set current Region UI state
+            settingsModal.regionInputs.forEach(input => {
+                if (input.value === state.region) {
+                    input.checked = true;
+                }
+            });
+
             settingsModal.el.classList.add('active');
         });
     }
 
+    // Close Modal
     if (settingsModal.closeBtn) settingsModal.closeBtn.addEventListener('click', closeSettings);
     if (settingsModal.backdrop) settingsModal.backdrop.addEventListener('click', closeSettings);
 
-    settingsModal.inputs.forEach(input => {
+    // Music App Change Listener
+    settingsModal.musicAppInputs.forEach(input => {
         input.addEventListener('change', (e) => {
             state.preferredApp = e.target.value;
             saveState();
-            // Optional: Close on selection? No, let user explicity close.
+        });
+    });
+
+    // Region Change Listener
+    settingsModal.regionInputs.forEach(input => {
+        input.addEventListener('change', (e) => {
+            const newRegion = e.target.value;
+            if (state.region !== newRegion) {
+                state.region = newRegion;
+                saveState();
+                updateUIText();
+
+                // Clear data to force re-fetch with new country
+                containers.timeline.innerHTML = '';
+                containers.explore.innerHTML = '';
+
+                // Refresh active view
+                if (state.activeTab === 'view-timeline') renderTimeline(true);
+                if (state.activeTab === 'view-explore') renderExplore();
+            }
         });
     });
 }
@@ -730,7 +777,8 @@ window.openTrack = function (el, title, artist, appleUrl, albumName) {
             // For Apple, we have a direct link often, but it goes to album.
             // If we have a trackId it would be better, but simple album link is fine.
             // We can also search if we prefer.
-            url = appleUrl || `https://music.apple.com/jp/search?term=${query}`;
+            const country = getCountryCode(state.region);
+            url = appleUrl || `https://music.apple.com/${country.toLowerCase()}/search?term=${query}`;
             break;
     }
 
@@ -803,6 +851,38 @@ function setupSwipeToClose() {
             content.style.transform = '';
         }
     });
+}
+
+// Start App
+// ----------------------------------------------------------------------
+// Multilingual / Region Helpers
+// ----------------------------------------------------------------------
+
+function updateUIText() {
+    const lang = state.region; // 'jp', 'global', 'kr'
+    const resources = window.uiText[lang] || window.uiText['jp'];
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (resources[key]) {
+            el.textContent = resources[key];
+        }
+    });
+
+    // Update Follow Buttons which are dynamic but have static labels?
+    // Actually renderArtists() handles them using 'Following'/'Follow'.
+    // We should update renderArtists to use translated strings.
+    // Let's re-render artists to update buttons
+    renderArtists();
+}
+
+function getCountryCode(region) {
+    switch (region) {
+        case 'global': return 'US';
+        case 'kr': return 'KR';
+        case 'jp':
+        default: return 'JP';
+    }
 }
 
 // Start App

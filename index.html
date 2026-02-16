@@ -55,7 +55,7 @@
             <!-- VIEW: TIMELINE (Home) -->
             <section id="view-timeline" class="view active">
                 <header class="app-header glass-header">
-                    <h1>Timeline</h1>
+                    <h1 data-i18n="header_timeline">Timeline</h1>
                     <button class="btn-icon" id="btn-settings" aria-label="Settings">
                         <i class="fa-solid fa-gear"></i>
                     </button>
@@ -68,15 +68,16 @@
 
                 <div class="empty-state hidden" id="timeline-empty">
                     <i class="fa-solid fa-music"></i>
-                    <p>No releases yet from artists you follow.</p>
-                    <button class="btn-primary" onclick="switchTab('view-explore')">Explore Artists</button>
+                    <p data-i18n="empty_timeline_msg">No releases yet from artists you follow.</p>
+                    <button class="btn-primary" onclick="switchTab('view-explore')"
+                        data-i18n="empty_timeline_btn">Explore Artists</button>
                 </div>
             </section>
 
             <!-- VIEW: EXPLORE -->
             <section id="view-explore" class="view">
                 <header class="app-header glass-header">
-                    <h1>Explore</h1>
+                    <h1 data-i18n="header_explore">Explore</h1>
 
                 </header>
 
@@ -88,17 +89,17 @@
             <!-- VIEW: ARTISTS -->
             <section id="view-artists" class="view">
                 <header class="app-header glass-header">
-                    <h1>Artists</h1>
+                    <h1 data-i18n="header_artists">Artists</h1>
                 </header>
 
                 <div class="controls-container">
                     <div class="filter-group">
-                        <button class="btn-sort active" data-filter="all">All</button>
-                        <button class="btn-sort" data-filter="following">Following</button>
+                        <button class="btn-sort active" data-filter="all" data-i18n="tab_all">All</button>
+                        <button class="btn-sort" data-filter="following" data-i18n="tab_following">Following</button>
                     </div>
                     <div class="sort-group" style="padding-left: 10px; border-left: 1px solid rgba(255,255,255,0.1);">
-                        <button class="btn-sort active" data-sort="name">A-Z</button>
-                        <button class="btn-sort" data-sort="debut">Debut</button>
+                        <button class="btn-sort active" data-sort="name" data-i18n="sort_name">A-Z</button>
+                        <button class="btn-sort" data-sort="debut" data-i18n="sort_debut">Debut</button>
                     </div>
                 </div>
 
@@ -127,15 +128,15 @@
         <nav class="bottom-nav glass-nav">
             <button class="nav-item active" data-target="view-timeline">
                 <i class="fa-solid fa-stream"></i>
-                <span>Timeline</span>
+                <span data-i18n="nav_timeline">Timeline</span>
             </button>
             <button class="nav-item" data-target="view-explore">
                 <i class="fa-solid fa-compass"></i>
-                <span>Explore</span>
+                <span data-i18n="nav_explore">Explore</span>
             </button>
             <button class="nav-item" data-target="view-artists">
                 <i class="fa-solid fa-users"></i>
-                <span>Artists</span>
+                <span data-i18n="nav_artists">Artists</span>
             </button>
         </nav>
 
@@ -180,12 +181,35 @@
 
             <div class="settings-wrapper">
                 <div class="settings-header-outside">
-                    <h2 class="settings-title-text">Default Music App</h2>
+                    <h2 class="settings-title-text" data-i18n="settings_title">Settings</h2>
                     <button class="close-modal-outside" id="close-settings"><i class="fa-solid fa-times"></i></button>
                 </div>
 
                 <div class="modal-content glass-card start-modal settings-card-body">
                     <div class="modal-body" style="padding: 10px 0;">
+                        <!-- Region Section -->
+                        <h3 class="setting-section-title" data-i18n="settings_region_title"
+                            style="padding: 0 20px; margin-bottom: 10px; font-size: 0.9rem; color: #a0a0b0;">Region &
+                            Language</h3>
+                        <div class="settings-group" style="margin-bottom: 20px;">
+                            <label class="setting-option">
+                                <input type="radio" name="region" value="jp" checked>
+                                <span class="setting-label">🇯🇵 Japan (日本語)</span>
+                            </label>
+                            <label class="setting-option">
+                                <input type="radio" name="region" value="global">
+                                <span class="setting-label">🌐 Global (English)</span>
+                            </label>
+                            <label class="setting-option">
+                                <input type="radio" name="region" value="kr">
+                                <span class="setting-label">🇰🇷 Korea (한국어)</span>
+                            </label>
+                        </div>
+
+                        <!-- Music App Section -->
+                        <h3 class="setting-section-title" data-i18n="settings_music_app_title"
+                            style="padding: 0 20px; margin-bottom: 10px; font-size: 0.9rem; color: #a0a0b0;">Default
+                            Music App</h3>
                         <div class="settings-group">
                             <label class="setting-option">
                                 <input type="radio" name="music-app" value="apple" checked>
@@ -212,6 +236,7 @@
 
     <!-- Scripts -->
     <script src="js/data.js"></script>
+    <script src="js/ui_text.js"></script>
     <script src="js/app.js"></script>
 </body>
 
