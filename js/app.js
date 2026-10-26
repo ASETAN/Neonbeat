@@ -9,6 +9,7 @@ let state = {
     sortCriteria: 'name', // 'popularity', 'name', 'debut'
     filterMode: 'all', // 'all', 'following'
     preferredApp: 'apple', // 'apple', 'spotify', 'youtube', 'amazon'
+    visibleApps: ['apple', 'spotify', 'youtube', 'amazon'], // buttons shown in release detail
     region: 'jp' // 'jp', 'global', 'kr'
 };
 
@@ -44,6 +45,7 @@ const settingsModal = {
     el: document.getElementById('modal-settings'),
     closeBtn: document.getElementById('close-settings'),
     musicAppInputs: document.querySelectorAll('input[name="music-app"]'),
+    visibleAppInputs: document.querySelectorAll('input[name="visible-app"]'),
     regionInputs: document.querySelectorAll('input[name="region"]'),
     trigger: document.getElementById('btn-settings'),
     backdrop: document.querySelector('#modal-settings .modal-backdrop')
@@ -147,6 +149,11 @@ function loadState() {
         console.log('First visit - initialized with default follows');
     }
 
+    try {
+        const savedVisible = JSON.parse(localStorage.getItem('visibleApps'));
+        if (Array.isArray(savedVisible)) state.visibleApps = savedVisible;
+    } catch (e) { /* ignore */ }
+
     const savedApp = localStorage.getItem('preferredApp');
     if (savedApp) {
         state.preferredApp = savedApp;
@@ -174,6 +181,7 @@ function saveState() {
     localStorage.setItem('followedArtists', JSON.stringify(followedList));
     localStorage.setItem('lastSync', new Date().toISOString());
     localStorage.setItem('preferredApp', state.preferredApp);
+    localStorage.setItem('visibleApps', JSON.stringify(state.visibleApps));
     localStorage.setItem('region', state.region);
     console.log('Saved state', state);
 }
@@ -572,6 +580,12 @@ async function openModal(release) {
             </div>
         </div>
     `;
+    // Hide music app buttons not selected in settings
+    modalBody.querySelectorAll('.btn-streaming').forEach(btn => {
+        const app = ['apple', 'spotify', 'youtube', 'amazon'].find(a => btn.classList.contains(a));
+        if (app && !state.visibleApps.includes(app)) btn.remove();
+    });
+
     // Show Content with animation (remove loading class)
     modal.el.classList.remove('loading');
 }
@@ -706,6 +720,10 @@ function setupSettings() {
                 }
             });
 
+            settingsModal.visibleAppInputs.forEach(input => {
+                input.checked = state.visibleApps.includes(input.value);
+            });
+
             // Set current Region UI state
             settingsModal.regionInputs.forEach(input => {
                 if (input.value === state.region) {
@@ -725,6 +743,16 @@ function setupSettings() {
     settingsModal.musicAppInputs.forEach(input => {
         input.addEventListener('change', (e) => {
             state.preferredApp = e.target.value;
+            saveState();
+        });
+    });
+
+    // Visible Music App Buttons Listener
+    settingsModal.visibleAppInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            state.visibleApps = [...settingsModal.visibleAppInputs]
+                .filter(i => i.checked)
+                .map(i => i.value);
             saveState();
         });
     });
