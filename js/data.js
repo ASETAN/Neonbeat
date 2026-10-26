@@ -37,7 +37,7 @@ const artists = [
         "popularity": 50,
         "isFollowed": true,
         "debutDate": "2020-01-01",
-        "itunesId": "1540309605",
+        "itunesId": "1540251304",
         "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/71/b9/a3/71b9a3e3-cd86-21ee-3404-14e183899a4f/5021732377876.jpg/600x600bb.jpg"
     },
     {
@@ -127,7 +127,7 @@ const artists = [
         "popularity": 50,
         "isFollowed": false,
         "debutDate": "2013-01-01",
-        "itunesId": "550302450",
+        "itunesId": "883131348",
         "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/02/4b/4f/024b4f86-9ac2-fa6c-0f02-b9d0fad455c3/26UMGIM03003.rgb.jpg/600x600bb.jpg"
     },
     {
@@ -271,7 +271,7 @@ const artists = [
         "popularity": 50,
         "isFollowed": false,
         "debutDate": "2022-01-01",
-        "itunesId": "1620611425",
+        "itunesId": "1616740364",
         "image": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/da/27/3a/da273ad3-72c6-92e2-e4c6-c7f7a62d76f4/23UM1IM27721.rgb.jpg/600x600bb.jpg"
     },
     {
@@ -334,7 +334,7 @@ const artists = [
         "popularity": 50,
         "isFollowed": false,
         "debutDate": "2022-01-01",
-        "itunesId": "1634560799",
+        "itunesId": "1635469693",
         "image": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/1d/9e/1b/1d9e1b5f-f1d5-1110-8871-1620d91e2477/22UM1IM39755.rgb.jpg/600x600bb.jpg"
     },
     {
@@ -646,16 +646,6 @@ function normalizeText(text) {
         .trim();
 }
 
-// True if the credited artist string (e.g. "LE SSERAFIM & EJAE") includes the artist
-function isCreditedArtist(artistName, targetName) {
-    const target = normalizeText(targetName);
-    const parts = normalizeText(artistName)
-        .split(/\s*(?:&|,|、|\bx\b|×|\bfeat\.?|\bft\.?|\bwith\b)\s*/i)
-        .map(p => p.trim())
-        .filter(Boolean);
-    return parts.includes(target);
-}
-
 // Remove duplicate releases:
 // - same collectionId (e.g. a collab fetched from two followed artists)
 // - same artist + same title + same release day (e.g. clean/explicit versions)
@@ -678,7 +668,7 @@ function dedupeReleases(releases) {
 // Cache fetched releases in localStorage to reduce API calls (6 hours)
 const RELEASE_CACHE_TTL = 6 * 60 * 60 * 1000;
 function releaseCacheKey(artist, country, includeCollabs) {
-    return `nb_rel_v1_${artist.itunesId}_${country}_${includeCollabs ? 1 : 0}`;
+    return `nb_rel_v2_${artist.itunesId}_${country}_${includeCollabs ? 1 : 0}`;
 }
 function readReleaseCache(key, allowStale = false) {
     try {
@@ -725,26 +715,13 @@ async function fetchArtistReleasesFromApi(artist, country, includeCollabs) {
     {
         // 1) Releases registered under the artist's own ID
         const lookupQuery = `lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
-        // 2) Collaborations (e.g. "feat.") registered under a combined artist name
-        const searchQuery = `search?term=${encodeURIComponent(artist.name)}&entity=album&attribute=artistTerm&limit=200&sort=recent&country=${country}`;
-
-        const [lookupData, searchData] = await Promise.all([
-            fetchItunes(lookupQuery, lookupQuery),
-            includeCollabs
-                ? fetchItunes(searchQuery, searchQuery).catch(err => {
-                    console.warn(`Collab search failed for ${artist.name}:`, err);
-                    return { results: [] };
-                })
-                : Promise.resolve({ results: [] })
-        ]);
-
+        // Collaborations (e.g. "LE SSERAFIM & EJAE") share the artist's ID,
+        // so the lookup already includes them.
+        const lookupData = await fetchItunes(lookupQuery, lookupQuery);
         const lookupItems = (lookupData.results || [])
             .filter(item => item.wrapperType === 'collection');
-        const collabItems = (searchData.results || [])
-            .filter(item => item.wrapperType === 'collection' &&
-                isCreditedArtist(item.artistName, artist.name));
 
-        const items = [...lookupItems, ...collabItems];
+        const items = lookupItems;
         if (items.length === 0) return [];
 
         // Filter and Map

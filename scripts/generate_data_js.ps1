@@ -1,11 +1,11 @@
 
 $verifiedIds = @{
     "IVE" = "1594159996"
-    "NewJeans" = "1634560799"
-    "LE SSERAFIM" = "1620611425"
-    "aespa" = "1540309605"
+    "NewJeans" = "1635469693"
+    "LE SSERAFIM" = "1616740364"
+    "aespa" = "1540251304"
     "TWICE" = "1056529729"
-    "BTS" = "550302450"
+    "BTS" = "883131348"
     "SEVENTEEN" = "993414920"
     "Stray Kids" = "1306346740"
 }
