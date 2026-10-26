@@ -1301,8 +1301,9 @@ h3 {
 
 /* Settings: scrollable card body */
 #modal-settings .settings-card-body {
-    max-height: calc(100dvh - 10vh - 90px - env(safe-area-inset-bottom));
-    overflow-y: auto;
+    height: auto !important;
+    max-height: calc(100dvh - 10vh - 90px - env(safe-area-inset-bottom)) !important;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
 }
