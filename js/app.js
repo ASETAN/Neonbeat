@@ -809,18 +809,13 @@ function toAppScheme(url) {
 
 function openMusicLink(url) {
     const scheme = isIOSStandalone() ? toAppScheme(url) : null;
-    if (!scheme) {
-        window.open(url, '_blank');
+    if (scheme) {
+        // Apple Music is preinstalled, so no web fallback (it caused an
+        // extra browser sheet to open after returning from the app).
+        window.location.href = scheme;
         return;
     }
-    let left = false;
-    const onHide = () => { left = true; };
-    document.addEventListener('visibilitychange', onHide, { once: true });
-    window.location.href = scheme;
-    setTimeout(() => {
-        document.removeEventListener('visibilitychange', onHide);
-        if (!left && !document.hidden) window.open(url, '_blank');
-    }, 1500);
+    window.open(url, '_blank');
 }
 
 // Route streaming buttons in the release modal through openMusicLink
