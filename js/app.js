@@ -401,7 +401,9 @@ function createReleaseCard(release, showDate = false) {
 
     card.innerHTML = `
         <div style="position: relative;">
-            <img src="${release.image}" alt="${release.title}" class="card-cover">
+            <img src="${release.image.replace('600x600', '200x200')}" alt="" class="card-cover"
+                loading="lazy" decoding="async"
+                onerror="if(!this.dataset.retry){this.dataset.retry=1;this.src='${release.image.replace('600x600', '100x100')}';}">
             <br> <!-- Spacer -->
             ${badgeHtml}
         </div>
