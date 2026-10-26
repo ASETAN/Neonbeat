@@ -491,16 +491,24 @@ async function openModal(release) {
 
     // Fetch Details
     const country = getCountryCode(state.region);
-    const details = await fetchAlbumDetails(release.id, country);
+    let details = await fetchAlbumDetailsCached(release.id, country);
 
     hideLoader(modal.el);
 
+    // If the track list can't be fetched (e.g. API rate limit), still show the
+    // release with its cover and streaming links instead of closing the modal.
+    const tracksUnavailable = !details;
     if (!details) {
-        // If failed, maybe show error in a toast or just close? 
-        // For now, let's just close to avoid stuck state, or alert.
-        console.error("Failed to load details");
-        closeModal();
-        return;
+        console.error("Failed to load details; showing basic info");
+        details = {
+            collection: {
+                collectionName: release.title,
+                artistName: release.artistName || '',
+                collectionViewUrl: release.links.apple,
+                collectionType: release.type === 'Album' ? 'Collection' : 'Album'
+            },
+            tracks: []
+        };
     }
 
     // Prepare Content
@@ -523,8 +531,8 @@ async function openModal(release) {
                 <div class="album-meta-large">
                     <span class="album-type"><i class="fa-solid fa-compact-disc"></i> ${collection.collectionType === 'Collection' ? 'Album' : 'Single'}</span>
                     <span>${releaseYear}</span>
-                    <span>${tracks.length} Songs</span>
-                    <span>${totalDurationMin} min</span>
+                    ${tracksUnavailable ? '' : `<span>${tracks.length} Songs</span>
+                    <span>${totalDurationMin} min</span>`}
                 </div>
                 
                 <div class="album-actions">
@@ -546,6 +554,7 @@ async function openModal(release) {
             <!-- Right: Tracklist -->
             <div class="album-tracks-side">
                 <div class="tracklist">
+                    ${tracksUnavailable ? '<p style="opacity:0.7; padding: 1rem 0;">Track list is unavailable right now. Please try again later.</p>' : ''}
                     ${tracks.map((track, index) => `
                         <div class="track-item" onclick="openTrack(this, '${track.title.replace(/'/g, "\\'")}', '${track.artist.replace(/'/g, "\\'")}', '${collection.collectionViewUrl}', '${collection.collectionName.replace(/'/g, "\\'")}' )">
                             <span class="track-num">${index + 1}</span>

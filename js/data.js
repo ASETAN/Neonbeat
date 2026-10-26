@@ -782,6 +782,28 @@ async function fetchArtistReleasesFromApi(artist, country, includeCollabs) {
     }
 }
 
+// Album details rarely change, so cache them for 7 days (retry once on failure)
+const ALBUM_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
+async function fetchAlbumDetailsCached(collectionId, country = 'JP') {
+    const key = `nb_album_v1_${collectionId}_${country}`;
+    try {
+        const cached = JSON.parse(localStorage.getItem(key));
+        if (cached && Date.now() - cached.t < ALBUM_CACHE_TTL) return cached.details;
+    } catch (e) { /* ignore */ }
+
+    let details = await fetchAlbumDetails(collectionId, country);
+    if (!details) {
+        await new Promise(r => setTimeout(r, 1500));
+        details = await fetchAlbumDetails(collectionId, country);
+    }
+    if (details && details.tracks.length > 0) {
+        try {
+            localStorage.setItem(key, JSON.stringify({ t: Date.now(), details }));
+        } catch (e) { /* storage full: ignore */ }
+    }
+    return details;
+}
+
 async function fetchAlbumDetails(collectionId, country = 'JP') {
     try {
         const isApiSupported = window.location.hostname.includes('vercel.app') ||
