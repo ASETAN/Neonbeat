@@ -803,6 +803,15 @@ function toAppScheme(url) {
         if (u.hostname === 'music.apple.com') {
             return url.replace(/^https:\/\//, 'music://');
         }
+        // Other apps only when chosen as the preferred app in settings
+        // (assumed installed; otherwise iOS shows an "invalid address" alert)
+        if (u.hostname === 'music.youtube.com' && state.preferredApp === 'youtube') {
+            return url.replace(/^https:\/\//, 'youtubemusic://');
+        }
+        if (u.hostname === 'open.spotify.com' && state.preferredApp === 'spotify') {
+            const m = u.pathname.match(/^\/search\/(.+)$/);
+            if (m) return `spotify:search:${m[1]}`;
+        }
     } catch (e) { /* ignore */ }
     return null;
 }
