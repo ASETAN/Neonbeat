@@ -294,7 +294,7 @@ async function renderTimeline(forceRefresh = false) {
         const country = getCountryCode(state.region);
         const promises = followedArtistsList.map(artist => fetchArtistReleases(artist, country, { includeCollabs: true }));
         const results = await Promise.all(promises);
-        const allFetchedReleases = dedupeReleases(results.flat());
+        const allFetchedReleases = collapseReleaseVersions(dedupeReleases(results.flat()));
 
         hideLoader(container);
 
@@ -413,6 +413,42 @@ function createReleaseCard(release, showDate = false) {
             </p>
         </div>
     `;
+
+    // Other versions (remixes, instrumental, feat. etc.) folded into this card
+    if (release.versions && release.versions.length > 0) {
+        const info = card.querySelector('.card-info');
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'versions-toggle';
+        toggle.textContent = `+${release.versions.length} versions`;
+
+        const list = document.createElement('ul');
+        list.className = 'versions-list hidden';
+        release.versions.forEach(v => {
+            const li = document.createElement('li');
+            li.className = 'versions-item';
+            li.innerHTML = `<span class="versions-title"></span><span class="versions-meta"></span>`;
+            li.querySelector('.versions-title').textContent = v.title.replace(/\s+-\s+(Single|EP)$/i, '');
+            li.querySelector('.versions-meta').textContent =
+                `${v.artistName && v.artistName !== release.artistName ? v.artistName + ' · ' : ''}${formatDate(v.date)}`;
+            li.onclick = (e) => {
+                e.stopPropagation();
+                openModal(v);
+            };
+            list.appendChild(li);
+        });
+
+        toggle.onclick = (e) => {
+            e.stopPropagation();
+            const hidden = list.classList.toggle('hidden');
+            toggle.textContent = hidden
+                ? `+${release.versions.length} versions`
+                : 'Hide versions';
+        };
+
+        info.appendChild(toggle);
+        info.appendChild(list);
+    }
 
     return card;
 }
@@ -615,7 +651,7 @@ async function openArtistDetail(artistId) {
 
         // Group by Date (reuse existing logic or just list?)
         // Let's use the timeline grouping for consistency
-        const grouped = groupByDate(releases);
+        const grouped = groupByDate(collapseReleaseVersions(releases));
         const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
         sortedDates.forEach(date => {

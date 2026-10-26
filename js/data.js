@@ -646,6 +646,41 @@ function normalizeText(text) {
         .trim();
 }
 
+// Base title used to group versions of the same release:
+// "Made My Night (Sped Up ver.) - Single" -> "made my night"
+function baseReleaseTitle(title) {
+    let t = normalizeText(title).replace(/\s+-\s+(single|ep)$/i, '');
+    let prev;
+    do {
+        prev = t;
+        t = t.replace(/\s*[\(\[][^\)\]]*[\)\]]\s*$/, '').trim();
+    } while (t !== prev && t.length > 0);
+    return t || normalizeText(title);
+}
+
+// Collapse remix / instrumental / sped up / feat. versions into one entry.
+// The main release is the earliest one without a version suffix (else the earliest).
+// Other versions are kept in release.versions.
+function collapseReleaseVersions(releases) {
+    const groups = new Map();
+    for (const release of releases) {
+        const key = `${release.artistId}|${baseReleaseTitle(release.title)}`;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(release);
+    }
+    const result = [];
+    for (const group of groups.values()) {
+        group.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const plain = group.find(r => !/[\(\[]/.test(r.title.replace(/\s+-\s+(Single|EP)$/i, '')));
+        const main = plain || group[0];
+        const versions = group
+            .filter(r => r !== main)
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+        result.push({ ...main, versions });
+    }
+    return result.sort((a, b) => new Date(b.date) - new Date(a.date));
+}
+
 // Remove duplicate releases:
 // - same collectionId (e.g. a collab fetched from two followed artists)
 // - same artist + same title + same release day (e.g. clean/explicit versions)
