@@ -69,20 +69,8 @@
                 <div class="empty-state hidden" id="timeline-empty">
                     <i class="fa-solid fa-music"></i>
                     <p data-i18n="empty_timeline_msg">No releases yet from artists you follow.</p>
-                    <button class="btn-primary" onclick="switchTab('view-explore')"
-                        data-i18n="empty_timeline_btn">Explore Artists</button>
-                </div>
-            </section>
-
-            <!-- VIEW: EXPLORE -->
-            <section id="view-explore" class="view">
-                <header class="app-header glass-header">
-                    <h1 data-i18n="header_explore">Explore</h1>
-
-                </header>
-
-                <div class="grid-container" id="explore-grid">
-                    <!-- Javascript will populate this -->
+                    <button class="btn-primary" onclick="switchTab('view-artists')"
+                        data-i18n="empty_timeline_btn">Find Artists</button>
                 </div>
             </section>
 
@@ -129,10 +117,6 @@
             <button class="nav-item active" data-target="view-timeline">
                 <i class="fa-solid fa-stream"></i>
                 <span data-i18n="nav_timeline">Timeline</span>
-            </button>
-            <button class="nav-item" data-target="view-explore">
-                <i class="fa-solid fa-compass"></i>
-                <span data-i18n="nav_explore">Explore</span>
             </button>
             <button class="nav-item" data-target="view-artists">
                 <i class="fa-solid fa-users"></i>
@@ -235,9 +219,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="js/data.js?v=20261027"></script>
+    <script src="js/data.js?v=20261027b"></script>
     <script src="js/ui_text.js"></script>
-    <script src="js/app.js?v=20261027"></script>
+    <script src="js/app.js?v=20261027b"></script>
 </body>
 
 </html>

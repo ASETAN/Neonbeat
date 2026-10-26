@@ -16,7 +16,7 @@ const uiText = {
         sort_name: "A-Z",
         sort_debut: "Debut",
         empty_timeline_msg: "フォロー中のアーティストのリリースはまだありません。",
-        empty_timeline_btn: "Explore Artists",
+        empty_timeline_btn: "Find Artists",
         settings_title: "Settings",
         settings_region_title: "Region & Language",
         settings_music_app_title: "Default Music App",
@@ -39,7 +39,7 @@ const uiText = {
         sort_name: "A-Z",
         sort_debut: "Debut",
         empty_timeline_msg: "No releases yet from artists you follow.",
-        empty_timeline_btn: "Explore Artists",
+        empty_timeline_btn: "Find Artists",
         settings_title: "Settings",
         settings_region_title: "Region & Language",
         settings_music_app_title: "Default Music App",
@@ -62,7 +62,7 @@ const uiText = {
         sort_name: "A-Z",
         sort_debut: "Debut",
         empty_timeline_msg: "팔로우한 아티스트의 새 릴리스가 없습니다.",
-        empty_timeline_btn: "Explore Artists",
+        empty_timeline_btn: "Find Artists",
         settings_title: "Settings",
         settings_region_title: "국가 및 언어", // Keep localized for setting understanding
         settings_music_app_title: "기본 음악 앱", // Keep localized

@@ -15,14 +15,12 @@ let state = {
 // DOM Elements
 const views = {
     timeline: document.getElementById('view-timeline'),
-    explore: document.getElementById('view-explore'),
     artists: document.getElementById('view-artists'),
     artistDetail: document.getElementById('view-artist-detail')
 };
 
 const containers = {
     timeline: document.getElementById('timeline-container'),
-    explore: document.getElementById('explore-grid'),
     artists: document.getElementById('artist-list'),
     artistDetail: document.getElementById('artist-detail-container')
 };
@@ -258,15 +256,12 @@ function switchTab(viewId) {
         // For simplicity in this v1 connected to API, we'll re-fetch to ensure freshness
         // In production, we should cache this.
         renderTimeline();
-    } else if (viewId === 'view-explore') {
-        renderExplore();
     }
 }
 
 // Render Logic
 function renderAll() {
     renderTimeline();
-    renderExplore();
     renderArtists();
 }
 
@@ -337,46 +332,6 @@ async function renderTimeline(forceRefresh = false) {
         hideLoader(container);
         console.error('Timeline render error:', err);
         container.innerHTML = '<div style="text-align:center; padding: 2rem; color: #ff6b6b;">Failed to load releases.</div>';
-    }
-}
-
-async function renderExplore() {
-    const container = containers.explore;
-
-    // Check if already populated to avoid re-fetching on every tab switch (simple cache)
-    if (container.children.length > 0 && !container.querySelector('.fa-spinner')) return;
-
-    showLoader(container, 'Loading trending...');
-
-    showLoader(container, 'Loading recent releases...');
-
-    // Fetch for ALL artists (New Requirement: All registered artists, last 1 month)
-    const allArtists = [...artists];
-    const ONE_MONTH_AGO = new Date();
-    ONE_MONTH_AGO.setMonth(ONE_MONTH_AGO.getMonth() - 1);
-
-    try {
-        // We might want to chunk this if there are too many artists, but for ~60 it's fine.
-        const country = getCountryCode(state.region);
-        const promises = allArtists.map(artist => fetchArtistReleases(artist, country));
-        const results = await Promise.all(promises);
-
-        // Flatten and Filter
-        const allReleases = dedupeReleases(results.flat())
-            .filter(release => new Date(release.date) >= ONE_MONTH_AGO)
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        hideLoader(container);
-        container.innerHTML = ''; // Clear only after success
-
-        allReleases.forEach(release => {
-            const card = createReleaseCard(release, true);
-            card.style.marginLeft = '0';
-            container.appendChild(card);
-        });
-    } catch (err) {
-        hideLoader(container);
-        container.innerHTML = '<div style="text-align:center; padding: 2rem; color: #ff6b6b;">Failed to load explore.</div>';
     }
 }
 
@@ -738,11 +693,9 @@ function setupSettings() {
 
                 // Clear data to force re-fetch with new country
                 containers.timeline.innerHTML = '';
-                containers.explore.innerHTML = '';
 
                 // Refresh active view
                 if (state.activeTab === 'view-timeline') renderTimeline(true);
-                if (state.activeTab === 'view-explore') renderExplore();
             }
         });
     });
