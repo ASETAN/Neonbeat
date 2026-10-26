@@ -789,8 +789,9 @@ window.openTrack = function (el, title, artist, appleUrl, albumName) {
 // Open streaming links
 // On iPhone home-screen (standalone) mode, opening https links shows an
 // in-app browser sheet that stays blank after jumping to the music app.
-// There we open the app directly via its URL scheme, and only fall back
-// to the web link if the app didn't open.
+// There we open Apple Music (preinstalled on iPhone) directly via its URL
+// scheme. Other apps keep the web link, because calling a scheme for an app
+// that isn't installed shows an "invalid address" alert.
 // ----------------------------------------------------------------------
 function isIOSStandalone() {
     return window.navigator.standalone === true;
@@ -801,15 +802,6 @@ function toAppScheme(url) {
         const u = new URL(url);
         if (u.hostname === 'music.apple.com') {
             return url.replace(/^https:\/\//, 'music://');
-        }
-        if (u.hostname === 'open.spotify.com') {
-            const m = u.pathname.match(/^\/search\/(.+)$/);
-            if (m) return `spotify:search:${m[1]}`;
-            const parts = u.pathname.split('/').filter(Boolean);
-            if (parts.length >= 2) return `spotify:${parts[0]}:${parts[1]}`;
-        }
-        if (u.hostname === 'music.youtube.com') {
-            return url.replace(/^https:\/\//, 'youtubemusic://');
         }
     } catch (e) { /* ignore */ }
     return null;
