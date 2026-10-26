@@ -782,8 +782,62 @@ window.openTrack = function (el, title, artist, appleUrl, albumName) {
             break;
     }
 
-    window.open(url, '_blank');
+    openMusicLink(url);
 };
+
+// ----------------------------------------------------------------------
+// Open streaming links
+// On iPhone home-screen (standalone) mode, opening https links shows an
+// in-app browser sheet that stays blank after jumping to the music app.
+// There we open the app directly via its URL scheme, and only fall back
+// to the web link if the app didn't open.
+// ----------------------------------------------------------------------
+function isIOSStandalone() {
+    return window.navigator.standalone === true;
+}
+
+function toAppScheme(url) {
+    try {
+        const u = new URL(url);
+        if (u.hostname === 'music.apple.com') {
+            return url.replace(/^https:\/\//, 'music://');
+        }
+        if (u.hostname === 'open.spotify.com') {
+            const m = u.pathname.match(/^\/search\/(.+)$/);
+            if (m) return `spotify:search:${m[1]}`;
+            const parts = u.pathname.split('/').filter(Boolean);
+            if (parts.length >= 2) return `spotify:${parts[0]}:${parts[1]}`;
+        }
+        if (u.hostname === 'music.youtube.com') {
+            return url.replace(/^https:\/\//, 'youtubemusic://');
+        }
+    } catch (e) { /* ignore */ }
+    return null;
+}
+
+function openMusicLink(url) {
+    const scheme = isIOSStandalone() ? toAppScheme(url) : null;
+    if (!scheme) {
+        window.open(url, '_blank');
+        return;
+    }
+    let left = false;
+    const onHide = () => { left = true; };
+    document.addEventListener('visibilitychange', onHide, { once: true });
+    window.location.href = scheme;
+    setTimeout(() => {
+        document.removeEventListener('visibilitychange', onHide);
+        if (!left && !document.hidden) window.open(url, '_blank');
+    }, 1500);
+}
+
+// Route streaming buttons in the release modal through openMusicLink
+document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a.btn-streaming');
+    if (!a) return;
+    e.preventDefault();
+    openMusicLink(a.href);
+});
 
 // Swipe to Close Logic for Modal
 function setupSwipeToClose() {
