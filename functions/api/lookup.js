@@ -24,6 +24,14 @@ export async function onRequest(context) {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     };
 
+    // Edge cache (6 hours) to reduce calls to iTunes and avoid rate limiting
+    const cache = typeof caches !== 'undefined' ? caches.default : null;
+    const cacheKey = new Request(url.toString(), { method: 'GET' });
+    if (cache) {
+        const cached = await cache.match(cacheKey);
+        if (cached) return cached;
+    }
+
     try {
         const response = await fetch(itunesUrl, { headers });
 
@@ -38,14 +46,18 @@ export async function onRequest(context) {
         }
 
         const data = JSON.parse(text);
-        return new Response(JSON.stringify(data), {
+        const result = new Response(JSON.stringify(data), {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',
-                'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+                'Cache-Control': 'public, max-age=21600', // Cache for 6 hours
                 'Access-Control-Allow-Origin': '*'
             }
         });
+        if (cache) {
+            context.waitUntil(cache.put(cacheKey, result.clone()));
+        }
+        return result;
     } catch (error) {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,

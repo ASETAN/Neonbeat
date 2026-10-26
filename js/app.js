@@ -297,7 +297,7 @@ async function renderTimeline(forceRefresh = false) {
     try {
         // Fetch releases for all followed artists
         const country = getCountryCode(state.region);
-        const promises = followedArtistsList.map(artist => fetchArtistReleases(artist, country));
+        const promises = followedArtistsList.map(artist => fetchArtistReleases(artist, country, { includeCollabs: true }));
         const results = await Promise.all(promises);
         const allFetchedReleases = dedupeReleases(results.flat());
 
@@ -453,7 +453,7 @@ function createReleaseCard(release, showDate = false) {
         <div class="card-info">
             <h3 class="card-title">${release.title}</h3>
             <p class="card-artist">
-                ${artist ? artist.name : 'Unknown Artist'}
+                ${release.artistName || (artist ? artist.name : 'Unknown Artist')}
                 ${showDate ? `<span style="font-size: 0.85em; opacity: 0.7; margin-left: 5px;">${formatDate(release.date)}</span>` : ''}
             </p>
         </div>
@@ -647,7 +647,7 @@ async function openArtistDetail(artistId) {
 
     try {
         const country = getCountryCode(state.region);
-        const releases = await fetchArtistReleases(artist, country);
+        const releases = await fetchArtistReleases(artist, country, { includeCollabs: true });
         hideLoader(container);
 
         // ... (rest of logic handles empty container)

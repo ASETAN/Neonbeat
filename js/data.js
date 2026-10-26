@@ -597,7 +597,29 @@ function jsonp(url, timeout = 10000) {
 }
 
 // Fetch iTunes data via the API proxy when available, falling back to JSONP
+// Limit simultaneous iTunes requests to avoid rate limiting (429)
+const ITUNES_MAX_CONCURRENT = 4;
+let itunesActive = 0;
+const itunesQueue = [];
+function acquireItunesSlot() {
+    if (itunesActive < ITUNES_MAX_CONCURRENT) { itunesActive++; return Promise.resolve(); }
+    return new Promise(resolve => itunesQueue.push(resolve));
+}
+function releaseItunesSlot() {
+    const next = itunesQueue.shift();
+    if (next) next(); else itunesActive--;
+}
+
 async function fetchItunes(proxyPath, directPath) {
+    await acquireItunesSlot();
+    try {
+        return await fetchItunesRaw(proxyPath, directPath);
+    } finally {
+        releaseItunesSlot();
+    }
+}
+
+async function fetchItunesRaw(proxyPath, directPath) {
     const isApiSupported = window.location.hostname.includes('vercel.app') ||
         window.location.hostname.includes('pages.dev') ||
         window.location.hostname.includes('workers.dev') ||
@@ -653,24 +675,67 @@ function dedupeReleases(releases) {
     return result;
 }
 
-async function fetchArtistReleases(artist, country = 'JP') {
+// Cache fetched releases in localStorage to reduce API calls (6 hours)
+const RELEASE_CACHE_TTL = 6 * 60 * 60 * 1000;
+function releaseCacheKey(artist, country, includeCollabs) {
+    return `nb_rel_v1_${artist.itunesId}_${country}_${includeCollabs ? 1 : 0}`;
+}
+function readReleaseCache(key, allowStale = false) {
     try {
-        if (!artist.itunesId) {
-            console.warn(`Skipping releases for ${artist.name} (No ID)`);
-            return [];
-        }
+        const cached = JSON.parse(localStorage.getItem(key));
+        if (!cached || !Array.isArray(cached.releases)) return null;
+        if (!allowStale && Date.now() - cached.t > RELEASE_CACHE_TTL) return null;
+        return cached.releases;
+    } catch (e) {
+        return null;
+    }
+}
+function writeReleaseCache(key, releases) {
+    try {
+        localStorage.setItem(key, JSON.stringify({ t: Date.now(), releases }));
+    } catch (e) {
+        console.warn('Release cache write failed:', e);
+    }
+}
 
+// includeCollabs: also search by artist name to pick up "feat." releases
+// (used for followed artists only, to keep the request count low)
+async function fetchArtistReleases(artist, country = 'JP', { includeCollabs = false, forceRefresh = false } = {}) {
+    if (!artist.itunesId) {
+        console.warn(`Skipping releases for ${artist.name} (No ID)`);
+        return [];
+    }
+    const cacheKey = releaseCacheKey(artist, country, includeCollabs);
+    if (!forceRefresh) {
+        const fresh = readReleaseCache(cacheKey);
+        if (fresh) return fresh;
+    }
+    try {
+        const releases = await fetchArtistReleasesFromApi(artist, country, includeCollabs);
+        if (releases.length > 0) writeReleaseCache(cacheKey, releases);
+        return releases;
+    } catch (error) {
+        console.error(`Failed to fetch releases for ${artist.name}:`, error);
+        // Fall back to older cached data if the API is unavailable
+        return readReleaseCache(cacheKey, true) || [];
+    }
+}
+
+async function fetchArtistReleasesFromApi(artist, country, includeCollabs) {
+    {
         // 1) Releases registered under the artist's own ID
         const lookupQuery = `lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
         // 2) Collaborations (e.g. "feat.") registered under a combined artist name
-        const searchQuery = `search?term=${encodeURIComponent(artist.name)}&entity=album&attribute=artistTerm&limit=50&sort=recent&country=${country}`;
+        const searchQuery = `search?term=${encodeURIComponent(artist.name)}&entity=album&attribute=artistTerm&limit=200&sort=recent&country=${country}`;
 
         const [lookupData, searchData] = await Promise.all([
             fetchItunes(lookupQuery, lookupQuery),
-            fetchItunes(searchQuery, searchQuery).catch(err => {
-                console.warn(`Collab search failed for ${artist.name}:`, err);
-                return { results: [] };
-            })
+            includeCollabs
+                ? fetchItunes(searchQuery, searchQuery).catch(err => {
+                    console.warn(`Collab search failed for ${artist.name}:`, err);
+                    return { results: [] };
+                })
+                : Promise.resolve({ results: [] })
         ]);
 
         const lookupItems = (lookupData.results || [])
@@ -702,9 +767,6 @@ async function fetchArtistReleases(artist, country = 'JP') {
 
         // Sort by Date - Remove slice to show all history
         return dedupeReleases(releases).sort((a, b) => new Date(b.date) - new Date(a.date));
-    } catch (error) {
-        console.error(`Failed to fetch releases for ${artist.name}:`, error);
-        return [];
     }
 }
 
