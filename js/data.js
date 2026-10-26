@@ -596,6 +596,63 @@ function jsonp(url, timeout = 10000) {
     });
 }
 
+// Fetch iTunes data via the API proxy when available, falling back to JSONP
+async function fetchItunes(proxyPath, directPath) {
+    const isApiSupported = window.location.hostname.includes('vercel.app') ||
+        window.location.hostname.includes('pages.dev') ||
+        window.location.hostname.includes('workers.dev') ||
+        window.location.hostname.includes('localhost') ||
+        window.location.hostname.includes('127.0.0.1');
+
+    if (isApiSupported) {
+        try {
+            const response = await fetch(`/api/${proxyPath}`);
+            if (!response.ok) throw new Error(`API Error: ${response.status}`);
+            return await response.json();
+        } catch (proxyError) {
+            console.warn('API Proxy failed, falling back to JSONP:', proxyError);
+        }
+    }
+    return await jsonp(`https://itunes.apple.com/${directPath}`);
+}
+
+// Normalize names/titles for comparison
+function normalizeText(text) {
+    return (text || '')
+        .toLowerCase()
+        .replace(/[\s　]+/g, ' ')
+        .trim();
+}
+
+// True if the credited artist string (e.g. "LE SSERAFIM & EJAE") includes the artist
+function isCreditedArtist(artistName, targetName) {
+    const target = normalizeText(targetName);
+    const parts = normalizeText(artistName)
+        .split(/\s*(?:&|,|、|\bx\b|×|\bfeat\.?|\bft\.?|\bwith\b)\s*/i)
+        .map(p => p.trim())
+        .filter(Boolean);
+    return parts.includes(target);
+}
+
+// Remove duplicate releases:
+// - same collectionId (e.g. a collab fetched from two followed artists)
+// - same artist + same title + same release day (e.g. clean/explicit versions)
+function dedupeReleases(releases) {
+    const seenIds = new Set();
+    const seenKeys = new Set();
+    const result = [];
+    for (const release of releases) {
+        if (seenIds.has(release.id)) continue;
+        const day = (release.date || '').slice(0, 10);
+        const key = `${normalizeText(release.artistName)}|${normalizeText(release.title)}|${day}`;
+        if (seenKeys.has(key)) continue;
+        seenIds.add(release.id);
+        seenKeys.add(key);
+        result.push(release);
+    }
+    return result;
+}
+
 async function fetchArtistReleases(artist, country = 'JP') {
     try {
         if (!artist.itunesId) {
@@ -603,42 +660,34 @@ async function fetchArtistReleases(artist, country = 'JP') {
             return [];
         }
 
-        // Use API Proxy if available (Vercel or Cloudflare Pages)
-        const isApiSupported = window.location.hostname.includes('vercel.app') ||
-            window.location.hostname.includes('pages.dev') ||
-            window.location.hostname.includes('workers.dev') ||
-            window.location.hostname.includes('localhost') ||
-            window.location.hostname.includes('127.0.0.1');
-        let data;
+        // 1) Releases registered under the artist's own ID
+        const lookupQuery = `lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
+        // 2) Collaborations (e.g. "feat.") registered under a combined artist name
+        const searchQuery = `search?term=${encodeURIComponent(artist.name)}&entity=album&attribute=artistTerm&limit=50&sort=recent&country=${country}`;
 
-        if (isApiSupported) {
-            try {
-                // Use Vercel/Cloudflare API Proxy
-                const url = `/api/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                data = await response.json();
-            } catch (proxyError) {
-                console.warn('API Proxy failed, falling back to JSONP:', proxyError);
-                // Fallback to JSONP
-                const url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
-                data = await jsonp(url);
-            }
-        } else {
-            // Use JSONP locally
-            const url = `https://itunes.apple.com/lookup?id=${artist.itunesId}&entity=album&limit=200&sort=recent&country=${country}`;
-            data = await jsonp(url);
-        }
+        const [lookupData, searchData] = await Promise.all([
+            fetchItunes(lookupQuery, lookupQuery),
+            fetchItunes(searchQuery, searchQuery).catch(err => {
+                console.warn(`Collab search failed for ${artist.name}:`, err);
+                return { results: [] };
+            })
+        ]);
 
-        if (!data.results || data.results.length === 0) return [];
+        const lookupItems = (lookupData.results || [])
+            .filter(item => item.wrapperType === 'collection');
+        const collabItems = (searchData.results || [])
+            .filter(item => item.wrapperType === 'collection' &&
+                isCreditedArtist(item.artistName, artist.name));
+
+        const items = [...lookupItems, ...collabItems];
+        if (items.length === 0) return [];
 
         // Filter and Map
-        // Results[0] is Artist, rest are Albums
-        const releases = data.results
-            .filter(item => item.wrapperType === 'collection')
+        const releases = items
             .map(item => ({
                 id: String(item.collectionId),
                 artistId: artist.id,
+                artistName: item.artistName,
                 title: item.collectionName,
                 date: item.releaseDate, // ISO String
                 type: item.collectionType === 'Album' && item.trackCount < 7 ? 'EP/Single' : 'Album',
@@ -652,7 +701,7 @@ async function fetchArtistReleases(artist, country = 'JP') {
             }));
 
         // Sort by Date - Remove slice to show all history
-        return releases.sort((a, b) => new Date(b.date) - new Date(a.date));
+        return dedupeReleases(releases).sort((a, b) => new Date(b.date) - new Date(a.date));
     } catch (error) {
         console.error(`Failed to fetch releases for ${artist.name}:`, error);
         return [];

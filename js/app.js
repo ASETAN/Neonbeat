@@ -299,7 +299,7 @@ async function renderTimeline(forceRefresh = false) {
         const country = getCountryCode(state.region);
         const promises = followedArtistsList.map(artist => fetchArtistReleases(artist, country));
         const results = await Promise.all(promises);
-        const allFetchedReleases = results.flat();
+        const allFetchedReleases = dedupeReleases(results.flat());
 
         hideLoader(container);
 
@@ -362,7 +362,7 @@ async function renderExplore() {
         const results = await Promise.all(promises);
 
         // Flatten and Filter
-        const allReleases = results.flat()
+        const allReleases = dedupeReleases(results.flat())
             .filter(release => new Date(release.date) >= ONE_MONTH_AGO)
             .sort((a, b) => new Date(b.date) - new Date(a.date));
 
